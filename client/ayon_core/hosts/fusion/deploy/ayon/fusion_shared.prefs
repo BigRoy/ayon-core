@@ -6,6 +6,7 @@ Global = {
       ["AYON:"] = "$(AYON_FUSION_ROOT)/deploy/ayon",
       ["Config:"] = "UserPaths:Config;AYON:Config",
       ["Scripts:"] = "UserPaths:Scripts;Reactor:System/Scripts",
+      ["UserPaths:"] = "UserData:;AllData:;Fusion:;Reactor:Deploy"
     },
   },
   Script = {
@@ -13,6 +14,7 @@ Global = {
     Python3Forced = true
     },
   UserInterface = {
+    Skin = "Neutral",
     Language = "en_US"
     },
   },
