@@ -23,7 +23,7 @@ class FusionPrelaunch(PreLaunchHook):
 
     app_groups = {"fusion"}
     order = 1
-    launch_types = {LaunchTypes.local}
+    launch_types = {LaunchTypes.local, LaunchTypes.farm_render}
 
     def execute(self):
         # making sure python 3 is installed at provided path

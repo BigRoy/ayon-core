@@ -27,7 +27,7 @@ class FusionCopyPrefsPrelaunch(PreLaunchHook):
 
     app_groups = {"fusion"}
     order = 2
-    launch_types = {LaunchTypes.local}
+    launch_types = {LaunchTypes.local, LaunchTypes.farm_render}
 
     def get_fusion_profile_name(self, profile_version) -> str:
         # Returns 'Default', unless FUSION16_PROFILE is set
