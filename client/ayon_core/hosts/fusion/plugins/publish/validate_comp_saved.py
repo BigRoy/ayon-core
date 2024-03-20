@@ -28,5 +28,9 @@ class ValidateFusionCompSaved(pyblish.api.ContextPlugin):
                 "Comp file does not exist: %s" % filename, title=self.label)
 
         if attrs["COMPB_Modified"]:
-            self.log.warning("Comp is modified. Save your comp to ensure your "
-                             "changes propagate correctly.")
+            # This is a debug log since the publishing itself will save the
+            # current comp file anyway; as such the warning is technically
+            # redundant
+            self.log.debug("Comp is modified. Save your comp to ensure your "
+                           "changes propagate correctly if you get unexpected "
+                           "results.")
