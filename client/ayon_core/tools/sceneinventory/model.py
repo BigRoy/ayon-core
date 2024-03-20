@@ -8,10 +8,7 @@ import ayon_api
 from qtpy import QtCore, QtGui
 import qtawesome
 
-from ayon_core.pipeline import (
-    get_current_project_name,
-    HeroVersionType,
-)
+from ayon_core.pipeline import get_current_project_name
 from ayon_core.style import get_default_entity_icon_color
 from ayon_core.tools.utils import get_qt_icon
 from ayon_core.tools.utils.models import TreeModel, Item
@@ -68,13 +65,7 @@ class InventoryModel(TreeModel):
         }
 
     def outdated(self, item):
-        value = item.get("version")
-        if isinstance(value, HeroVersionType):
-            return False
-
-        if item.get("version") == item.get("highest_version"):
-            return False
-        return True
+        return item.get("isOutdated", True)
 
     def data(self, index, role):
         if not index.isValid():
@@ -297,6 +288,21 @@ class InventoryModel(TreeModel):
         )
         sites_info = self._controller.get_sites_information()
 
+        # Query the highest available version so the model can know
+        # whether current version is currently up-to-date.
+        highest_version_by_product_id = ayon_api.get_last_versions(
+            project_name,
+            product_ids={
+                group["version"]["productId"] for group in grouped.values()
+            },
+            fields=["productId", "version"]
+        )
+        # Map value to `version` key
+        highest_version_by_product_id = {
+            product_id: version["version"]
+            for product_id, version in highest_version_by_product_id.items()
+        }
+
         for repre_id, group_dict in sorted(grouped.items()):
             group_containers = group_dict["containers"]
             repre_entity = group_dict["representation"]
@@ -305,12 +311,6 @@ class InventoryModel(TreeModel):
             product_entity = group_dict["product"]
 
             product_type = product_entity["productType"]
-
-            # Store the highest available version so the model can know
-            # whether current version is currently up-to-date.
-            highest_version = ayon_api.get_last_version_by_product_id(
-                project_name, version_entity["productId"]
-            )
 
             # create the group header
             group_node = Item()
@@ -321,7 +321,17 @@ class InventoryModel(TreeModel):
             )
             group_node["representation"] = repre_id
             group_node["version"] = version_entity["version"]
-            group_node["highest_version"] = highest_version["version"]
+
+            # We check against `abs(version)` because we allow a hero version
+            # which is represented by a negative number to also count as
+            # latest version
+            # If a hero version for whatever reason does not match the latest
+            # positive version number, we also consider it outdated
+            group_node["isOutdated"] = (
+                abs(version_entity["version"]) !=
+                highest_version_by_product_id.get(version_entity["productId"])
+            )
+
             group_node["productType"] = product_type or ""
             group_node["productTypeIcon"] = product_type_icon
             group_node["count"] = len(group_containers)
@@ -490,17 +500,15 @@ class FilterProxyModel(QtCore.QSortFilterProxyModel):
     def _is_outdated(self, row, parent):
         """Return whether row is outdated.
 
-        A row is considered outdated if it has "version" and "highest_version"
-        data and in the internal data structure, and they are not of an
-        equal value.
+        A row is considered outdated if it has no "version" or the "isOutdated"
+        value is True.
 
         """
         def outdated(node):
             version = node.get("version", None)
-            highest = node.get("highest_version", None)
 
             # Always allow indices that have no version data at all
-            if version is None and highest is None:
+            if version is None:
                 return True
 
             # If either a version or highest is present but not the other
@@ -508,9 +516,10 @@ class FilterProxyModel(QtCore.QSortFilterProxyModel):
             if not self._hierarchy_view:
                 # Skip this check if in hierarchy view, or the child item
                 # node will be hidden even it's actually outdated.
-                if version is None or highest is None:
+                if version is None:
                     return False
-            return version != highest
+
+            return node.get("isOutdated", True)
 
         index = self.sourceModel().index(row, self.filterKeyColumn(), parent)
 
