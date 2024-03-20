@@ -13,9 +13,9 @@ class FusionSetFrameRangeLoader(load.LoaderPlugin):
         "camera",
         "imagesequence",
         "render",
+        "plate",
         "yeticache",
         "pointcache",
-        "render",
     }
     representations = ["*"]
     extensions = {"*"}
@@ -50,9 +50,9 @@ class FusionSetFrameRangeWithHandlesLoader(load.LoaderPlugin):
         "camera",
         "imagesequence",
         "render",
+        "plate",
         "yeticache",
         "pointcache",
-        "render",
     }
     representations = ["*"]
 
