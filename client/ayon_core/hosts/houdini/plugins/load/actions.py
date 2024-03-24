@@ -14,8 +14,12 @@ class SetFrameRangeLoader(load.LoaderPlugin):
         "pointcache",
         "vdbcache",
         "usd",
+        "render",
+        "plate",
+        "mayaScene",
+        "review"
     }
-    representations = ["abc", "vdb", "usd"]
+    representations = ["*"]
 
     label = "Set frame range"
     order = 11
@@ -51,8 +55,12 @@ class SetFrameRangeWithHandlesLoader(load.LoaderPlugin):
         "pointcache",
         "vdbcache",
         "usd",
+        "render",
+        "plate",
+        "mayaScene",
+        "review"
     }
-    representations = ["abc", "vdb", "usd"]
+    representations = ["*"]
 
     label = "Set frame range (with handles)"
     order = 12
