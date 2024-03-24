@@ -36,6 +36,28 @@ class ExtractRedshiftProxy(publish.Extractor):
 
         output = instance.data["frames"]
 
+        # Check if the user aborted the export process, since no error is
+        # raised by Houdini if the user aborts it.
+        user_aborted = False
+        for warning in ropnode.warnings():
+            self.log.warning(warning)
+            if "extraction aborted by the user" in warning:
+                user_aborted = True
+        if user_aborted:
+            raise RuntimeError("User aborted the extraction")
+
+        # The extractor doesn't warn with user aborted message
+        # if the user interrupted the process very early on - instead it
+        # mentions some warnings related to OCIO. To ensure valid output
+        # we'll perform a check expected output files exist
+        missing_filenames = []
+        for fname in output:
+            path = os.path.join(staging_dir, fname)
+            if not os.path.isfile(path):
+                missing_filenames.append(fname)
+        if missing_filenames:
+            raise RuntimeError("Missing frames: {}".format(missing_filenames))
+
         if "representations" not in instance.data:
             instance.data["representations"] = []
 
