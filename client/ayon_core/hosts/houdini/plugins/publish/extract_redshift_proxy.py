@@ -64,7 +64,7 @@ class ExtractRedshiftProxy(publish.Extractor):
         representation = {
             "name": "rs",
             "ext": "rs",
-            "files": output,
+            "files": output if len(output) > 1 else output[0],
             "stagingDir": staging_dir,
         }
 
