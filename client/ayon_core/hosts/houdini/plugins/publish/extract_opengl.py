@@ -28,7 +28,15 @@ class ExtractOpenGL(publish.Extractor):
 
         render_rop(ropnode)
 
+        # Unfortunately user interrupting the extraction does not raise an
+        # error and thus still continues to the integrator. To capture that
+        # we make sure all files exist
         output = instance.data["frames"]
+        missing = [fname for fname in output
+                   if not os.path.exists(os.path.join(staging_dir, fname))]
+        if missing:
+            raise RuntimeError("Failed to complete review extraction. "
+                               "Missing output files: {}".format(missing))
 
         tags = ["review"]
         if not instance.data.get("keepImages"):
