@@ -765,14 +765,6 @@ class PublishersModel(BaseSettingsModel):
         default_factory=BasicValidateModel,
         title="Validate Ass Relative Paths"
     )
-    ValidateInstancerContent: BasicValidateModel = SettingsField(
-        default_factory=BasicValidateModel,
-        title="Validate Instancer Content"
-    )
-    ValidateInstancerFrameRanges: BasicValidateModel = SettingsField(
-        default_factory=BasicValidateModel,
-        title="Validate Instancer Cache Frame Ranges"
-    )
     ValidateNoDefaultCameras: BasicValidateModel = SettingsField(
         default_factory=BasicValidateModel,
         title="Validate No Default Cameras"
@@ -1310,16 +1302,6 @@ DEFAULT_PUBLISH_SETTINGS = {
         "active": True
     },
     "ValidateAssRelativePaths": {
-        "enabled": True,
-        "optional": False,
-        "active": True
-    },
-    "ValidateInstancerContent": {
-        "enabled": True,
-        "optional": False,
-        "active": True
-    },
-    "ValidateInstancerFrameRanges": {
         "enabled": True,
         "optional": False,
         "active": True
