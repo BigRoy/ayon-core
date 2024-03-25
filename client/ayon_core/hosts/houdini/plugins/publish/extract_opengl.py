@@ -45,7 +45,7 @@ class ExtractOpenGL(publish.Extractor):
         representation = {
             "name": instance.data["imageFormat"],
             "ext": instance.data["imageFormat"],
-            "files": output,
+            "files": output if len(output) > 1 else output[0],
             "stagingDir": staging_dir,
             "frameStart": instance.data["frameStartHandle"],
             "frameEnd": instance.data["frameEndHandle"],
