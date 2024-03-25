@@ -31,7 +31,8 @@ class HighlightBySceneSelection(InventoryAction):
 
     def process(self, containers):
 
-        selection = set(cmds.ls(selection=True, long=True, objectsOnly=True))
+        selection = set(cmds.ls(selection=True, long=True, objectsOnly=True,
+                                ufeObjects=True))
         host = registered_host()
 
         to_select = []
