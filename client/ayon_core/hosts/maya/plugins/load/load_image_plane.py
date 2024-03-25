@@ -238,17 +238,20 @@ class ImagePlaneLoader(load.LoaderPlugin):
                          colorspace, type="string")
 
         # Set frame range.
-        start_frame = folder_entity["attrib"]["frameStart"]
-        end_frame = folder_entity["attrib"]["frameEnd"]
-
-        for attr, value in {
-            "frameOffset": 0,
-            "frameIn": start_frame,
-            "frameOut": end_frame,
-            "frameCache": end_frame
-        }:
-            plug = "{}.{}".format(image_plane_shape, attr)
-            cmds.setAttr(plug, value)
+        # TODO(Colorbleed): clean up commented code
+        #  This is disabled because we don't want the loaded content to be
+        #  re-shifted upon updates
+        # start_frame = folder_entity["attrib"]["frameStart"]
+        # end_frame = folder_entity["attrib"]["frameEnd"]
+        #
+        # for attr, value in {
+        #     "frameOffset": 0,
+        #     "frameIn": start_frame,
+        #     "frameOut": end_frame,
+        #     "frameCache": end_frame
+        # }:
+        #     plug = "{}.{}".format(image_plane_shape, attr)
+        #     cmds.setAttr(plug, value)
 
     def switch(self, container, context):
         self.update(container, context)
