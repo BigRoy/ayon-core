@@ -46,7 +46,6 @@ class AYONMenu(QtWidgets.QWidget):
             | QtCore.Qt.WindowCloseButtonHint
             | QtCore.Qt.WindowStaysOnTopHint
         )
-        self.render_mode_widget = None
         self.setWindowTitle(MENU_LABEL)
 
         context_label = QtWidgets.QLabel("Context", self)
