@@ -133,6 +133,9 @@ class AYONMenu(QtWidgets.QWidget):
         label = get_current_folder_path()
         self.context_label.setText(label)
 
+        # Update window title
+        self.setWindowTitle(f"{label} - {MENU_LABEL}")
+
     def register_callback(self, name, fn):
         # Create a wrapper callback that we only store
         # for as long as we want it to persist as callback
