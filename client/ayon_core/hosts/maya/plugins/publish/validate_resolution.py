@@ -20,6 +20,9 @@ class ValidateResolution(pyblish.api.InstancePlugin,
     actions = [RepairAction]
     optional = True
 
+    # Colorbleed-edit: Make resolution validation optional
+    required_resolution = False
+
     def process(self, instance):
         if not self.is_active(instance.data):
             return
@@ -66,13 +69,19 @@ class ValidateResolution(pyblish.api.InstancePlugin,
                 "defaultResolution.pixelAspect", layer=layer
             )
         if current_width != width or current_height != height:
-            cls.log.error(
+            log_fn = (
+                cls.log.error if cls.required_resolution else cls.log.warning
+            )
+            log_fn(
                 "Render resolution {}x{} does not match "
                 "folder resolution {}x{}".format(
                     current_width, current_height,
                     width, height
                 ))
-            invalid = True
+
+            # Make resolution validation optional
+            if cls.required_resolution:
+                invalid = True
         if current_pixelAspect != pixelAspect:
             cls.log.error(
                 "Render pixel aspect {} does not match "
