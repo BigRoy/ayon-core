@@ -22,9 +22,9 @@ def get_instance_node_ids(instance, ignore_intermediate_objects=True):
     # Collect each id with their members
     ids = defaultdict(list)
     for member in instance_members:
+        object_id = lib.get_id(member)
         if not object_id:
             continue
-        object_id = lib.get_id(member)
         ids[object_id].append(member)
 
     return ids
