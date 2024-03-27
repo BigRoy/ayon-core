@@ -285,7 +285,9 @@ class HoudiniCreator(NewCreator, HoudiniCreatorBase):
 
     def get_pre_create_attr_defs(self):
         return [
-            BoolDef("use_selection", label="Use selection")
+            BoolDef("use_selection",
+                    label="Use selection",
+                    default=True)
         ]
 
     @staticmethod
