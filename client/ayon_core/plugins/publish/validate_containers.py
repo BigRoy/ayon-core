@@ -31,6 +31,9 @@ class ValidateContainers(OptionalPyblishPluginMixin,
 
     def process(self, context):
         if not self.is_active(context.data):
+            self.log.warning(
+                "Validation of outdated containers is disabled."
+            )
             return
 
         if any_outdated_containers():
