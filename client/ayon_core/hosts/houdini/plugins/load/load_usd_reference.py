@@ -38,7 +38,11 @@ class USDReferenceLoader(load.LoaderPlugin):
         node_name = "{}_{}".format(namespace, name) if namespace else name
 
         # Create USD reference
-        container = stage.createNode("reference", node_name=node_name)
+        network = lib.find_active_network(
+            category=hou.lopNodeTypeCategory(),
+            default="/stage"
+        )
+        container = network.createNode("reference", node_name=node_name)
         container.setParms({"filepath1": file_path})
         container.moveToGoodPosition()
 
