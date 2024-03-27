@@ -15,7 +15,7 @@ class USDSublayerLoader(load.LoaderPlugin):
     }
     label = "Sublayer USD"
     representations = ["usd", "usda", "usdlc", "usdnc", "abc"]
-    order = 1
+    order = -7
 
     icon = "code-fork"
     color = "orange"
