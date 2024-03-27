@@ -941,7 +941,7 @@ DEFAULT_PUBLISH_VALUES = {
                             "output": [
                                 "-pix_fmt yuv420p",
                                 "-crf 18",
-                                "-intra"
+                                "-g 1"
                             ]
                         },
                         "filter": {
