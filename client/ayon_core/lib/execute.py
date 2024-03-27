@@ -36,7 +36,7 @@ def execute(args, silent=False, cwd=None, env=None, shell=None):
     log_levels = ["DEBUG:", "INFO:", "ERROR:", "WARNING:", "CRITICAL:"]
 
     log = Logger.get_logger("execute")
-    log.info("Executing ({})".format(" ".join(args)))
+    log.debug("Executing ({})".format(" ".join(args)))
     popen = subprocess.Popen(
         args,
         stdout=subprocess.PIPE,
@@ -140,7 +140,7 @@ def run_subprocess(*args, **kwargs):
         if full_output:
             full_output += "\n"
         full_output += _stderr
-        logger.info(_stderr)
+        logger.debug(_stderr)
 
     if proc.returncode != 0:
         exc_msg = "Executing arguments was not successful: \"{}\"".format(args)
