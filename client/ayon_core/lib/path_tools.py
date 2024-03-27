@@ -126,8 +126,8 @@ def version_up(filepath):
     regex = r"[._]v\d+"
     matches = re.findall(regex, str(basename), re.IGNORECASE)
     if not matches:
-        log.info("Creating version...")
         new_label = "_v{version:03d}".format(version=1)
+        log.debug("Creating version suffix: %s", new_label)
         new_basename = "{}{}".format(basename, new_label)
     else:
         label = matches[-1]
@@ -160,10 +160,10 @@ def version_up(filepath):
 
     for file in os.listdir(dirname):
         if file.endswith(ext) and file.startswith(clash_basename):
-            log.info("Skipping existing version %s" % new_label)
+            log.debug("Skipping existing version %s" % new_label)
             return version_up(new_filename)
 
-    log.info("New version %s" % new_label)
+    log.debug("New version %s" % new_label)
     return new_filename
 
 
