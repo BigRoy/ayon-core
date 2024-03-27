@@ -9,10 +9,7 @@ from ayon_core.hosts.houdini.api import lib
 class USDSublayerLoader(load.LoaderPlugin):
     """Sublayer USD file in Solaris"""
 
-    product_types = {
-        "usd",
-        "usdCamera",
-    }
+    product_types = {"*"}
     label = "Sublayer USD"
     representations = ["usd", "usda", "usdlc", "usdnc", "abc"]
     order = -7

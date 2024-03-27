@@ -9,10 +9,7 @@ from ayon_core.hosts.houdini.api import lib
 class USDReferenceLoader(load.LoaderPlugin):
     """Reference USD file in Solaris"""
 
-    product_types = {
-        "usd",
-        "usdCamera",
-    }
+    product_types = {"*"}
     label = "Reference USD"
     representations = ["usd", "usda", "usdlc", "usdnc", "abc"]
     order = -8
