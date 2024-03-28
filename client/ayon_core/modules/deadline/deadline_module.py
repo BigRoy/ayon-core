@@ -1,5 +1,6 @@
 import os
 import sys
+import copy
 
 import requests
 import six
@@ -16,6 +17,8 @@ class DeadlineWebserviceError(Exception):
 
 class DeadlineModule(AYONAddon, IPluginPaths):
     name = "deadline"
+
+    _cache = {}
 
     def initialize(self, studio_settings):
         # This module is always enabled
@@ -76,3 +79,53 @@ class DeadlineModule(AYONAddon, IPluginPaths):
             return []
 
         return response.json()
+
+    @classmethod
+    def get_deadline_pools_cached(cls, webservice, log=None):
+        cache = cls._cache.setdefault(webservice, {})
+        if "pools" not in cache:
+            cache["pools"] = DeadlineModule.get_deadline_pools(webservice,
+                                                               log=log)
+        return copy.deepcopy(cache["pools"])
+
+    @staticmethod
+    def get_deadline_slaves(webservice, log=None):
+        # type: (str) -> list
+        """Get slaves from Deadline.
+        Args:
+            webservice (str): Server url.
+            log (Logger)
+        Returns:
+            list: Pools.
+        Throws:
+            RuntimeError: If deadline webservice is unreachable.
+
+        """
+        from .abstract_submit_deadline import requests_get
+
+        if not log:
+            log = Logger.get_logger(__name__)
+
+        argument = "{}/api/slaves?NamesOnly=true".format(webservice)
+        try:
+            response = requests_get(argument)
+        except requests.exceptions.ConnectionError as exc:
+            msg = 'Cannot connect to DL web service {}'.format(webservice)
+            log.error(msg)
+            six.reraise(
+                DeadlineWebserviceError,
+                DeadlineWebserviceError('{} - {}'.format(msg, exc)),
+                sys.exc_info()[2])
+        if not response.ok:
+            log.warning("No slaves retrieved")
+            return []
+
+        return response.json()
+
+    @classmethod
+    def get_deadline_slaves_cached(cls, webservice, log=None):
+        cache = cls._cache.setdefault(webservice, {})
+        if "slaves" not in cache:
+            cache["slaves"] = DeadlineModule.get_deadline_slaves(webservice,
+                                                                 log=log)
+        return copy.deepcopy(cache["slaves"])

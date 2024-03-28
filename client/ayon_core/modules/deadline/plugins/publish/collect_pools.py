@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import pyblish.api
-from ayon_core.lib import TextDef
+from ayon_core.lib import EnumDef
 from ayon_core.pipeline.publish import AYONPyblishPluginMixin
+from ayon_core.modules.deadline.deadline_module import DeadlineModule
 
 
 class CollectDeadlinePools(pyblish.api.InstancePlugin,
@@ -50,6 +51,7 @@ class CollectDeadlinePools(pyblish.api.InstancePlugin,
 
     primary_pool = None
     secondary_pool = None
+    available_pools = []
 
     @classmethod
     def apply_settings(cls, project_settings):
@@ -57,6 +59,16 @@ class CollectDeadlinePools(pyblish.api.InstancePlugin,
         settings = project_settings["deadline"]["publish"]["CollectDeadlinePools"]  # noqa
         cls.primary_pool = settings.get("primary_pool", None)
         cls.secondary_pool = settings.get("secondary_pool", None)
+
+        # Colorbleed edit: Because we have only one Deadline URL we can
+        #   always use the default and thus cache it to make the attribute def
+        #   and enum
+        deadline_url = next(iter(
+            project_settings["deadline"]["deadline_urls"]
+        ))["value"]
+        cls.available_pools = DeadlineModule.get_deadline_pools_cached(
+            deadline_url, log=cls.log
+        )
 
     def process(self, instance):
         attr_values = self.get_attr_values_from_data(instance.data)
@@ -69,7 +81,7 @@ class CollectDeadlinePools(pyblish.api.InstancePlugin,
 
         if not instance.data.get("secondaryPool"):
             instance.data["secondaryPool"] = (
-                attr_values.get("secondaryPool") or self.secondary_pool or "none"  # noqa
+                attr_values.get("secondaryPool") or self.secondary_pool or ""
             )
 
         if instance.data["secondaryPool"] == "-":
@@ -77,22 +89,21 @@ class CollectDeadlinePools(pyblish.api.InstancePlugin,
 
     @classmethod
     def get_attribute_defs(cls):
-        # TODO: Preferably this would be an enum for the user
-        #       but the Deadline server URL can be dynamic and
-        #       can be set per render instance. Since get_attribute_defs
-        #       can't be dynamic unfortunately EnumDef isn't possible (yet?)
-        # pool_names = self.deadline_module.get_deadline_pools(deadline_url,
-        #                                                      self.log)
-        # secondary_pool_names = ["-"] + pool_names
-
+        # Colorbleed edit: We don't use differing deadline URLs which means
+        # we always know which URL we want to query for the available pools.
+        # So we can use EnumDef instead of TextDef.
+        # As such we retrieve available pools during `apply_settings`
+        pools = [""] + sorted(cls.available_pools)
         return [
-            TextDef("primaryPool",
+            EnumDef("primaryPool",
                     label="Primary Pool",
+                    items=pools,
                     default=cls.primary_pool,
                     tooltip="Deadline primary pool, "
                             "applicable for farm rendering"),
-            TextDef("secondaryPool",
+            EnumDef("secondaryPool",
                     label="Secondary Pool",
+                    items=pools,
                     default=cls.secondary_pool,
                     tooltip="Deadline secondary pool, "
                             "applicable for farm rendering")
