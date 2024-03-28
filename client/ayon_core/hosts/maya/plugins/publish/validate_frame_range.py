@@ -14,6 +14,30 @@ from ayon_core.hosts.maya.api.lib_rendersetup import (
 from maya.app.renderSetup.model.override import AbsOverride
 
 
+class ValidateFrameRangeIsValidRange(pyblish.api.InstancePlugin):
+    """Validate the frame range start frame is not higher than end frame"""
+    families = ["*"]
+    hosts = ["maya"]
+    label = "Frame range"
+    order = pyblish.api.ValidatorOrder
+
+    def process(self, instance):
+        # basic sanity checks
+        inst_start = instance.data.get("frameStartHandle")
+        inst_end = instance.data.get("frameEndHandle")
+        if inst_start is None or inst_end is None:
+            # Ignore instance without frame start and end
+            return
+
+        if inst_start > inst_end:
+            raise PublishValidationError(
+                "Start frame {} is higher then end frame {}.\n"
+                "Please set a valid frame range.".format(
+                    inst_start, inst_end
+                )
+            )
+
+
 class ValidateFrameRange(pyblish.api.InstancePlugin,
                          OptionalPyblishPluginMixin):
     """Validates the frame ranges.
