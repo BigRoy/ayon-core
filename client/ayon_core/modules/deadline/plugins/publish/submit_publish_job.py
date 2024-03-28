@@ -171,28 +171,14 @@ class ProcessSubmittedJobOnFarm(pyblish.api.InstancePlugin,
         Returns:
             (str): deadline_publish_job_id
         """
+        # instance.data.get("productName") != instances[0]["productName"]
+        # 'Main' vs 'renderMain'
+
         data = instance.data.copy()
         product_name = data["productName"]
         job_name = "Publish - {}".format(product_name)
 
         anatomy = instance.context.data['anatomy']
-
-        # instance.data.get("productName") != instances[0]["productName"]
-        # 'Main' vs 'renderMain'
-        override_version = None
-        instance_version = instance.data.get("version")  # take this if exists
-        if instance_version != 1:
-            override_version = instance_version
-
-        output_dir = self._get_publish_folder(
-            anatomy,
-            deepcopy(instance.data["anatomyData"]),
-            instance.data.get("folderEntity"),
-            instances[0]["productName"],
-            instance.context,
-            instances[0]["productType"],
-            override_version
-        )
 
         # Transfer the environment from the original job to this dependent
         # job so they use the same environment
@@ -253,8 +239,6 @@ class ProcessSubmittedJobOnFarm(pyblish.api.InstancePlugin,
                 "Group": self.deadline_group,
                 "Pool": self.deadline_pool or instance.data.get("primaryPool"),
                 "SecondaryPool": secondary_pool,
-                # ensure the outputdirectory with correct slashes
-                "OutputDirectory0": output_dir.replace("\\", "/")
 
                 # Error out early on this job since it's unlikely
                 # a subsequent publish will suddenly succeed and
@@ -271,6 +255,50 @@ class ProcessSubmittedJobOnFarm(pyblish.api.InstancePlugin,
             # Mandatory for Deadline, may be empty
             "AuxFiles": [],
         }
+
+        # Collect the output directories
+        # instance.data.get("subset") != instances[0]["subset"]
+        # 'Main' vs 'renderMain'
+        # We prioritize the reviewable and 'beauty' entries over others because
+        # it's most likely the folder the artist wants to open by default in
+        # Deadline Manager with CTRL+O on the publish job
+        def artist_sort(render_instance):
+            product_name = render_instance["productName"]
+
+            # Shortest subset is likely best because it most likely doesn't
+            # include an AOV name and thus is the master/beauty layer
+            points = len(product_name)
+
+            # If it includes 'beauty' we prioritize it
+            if "beauty" in product_name:
+                points -= 1000
+
+            # If it's marked for review we also prioritize it over instances
+            # that are not marked for review
+            if render_instance.get("review", False):
+                points -= 2000
+
+            # If points match, then still sort by subset alphabetically
+            return (points, product_name)
+
+        override_version = None
+        instance_version = instance.data.get("version")  # take this if exists
+        if instance_version != 1:
+            override_version = instance_version
+        for i, output_instance in enumerate(
+            sorted(instances, key=artist_sort)
+        ):
+            output_dir = self._get_publish_folder(
+                anatomy=instance.context.data['anatomy'],
+                template_data=deepcopy(instance.data["anatomyData"]),
+                folder_entity=instance.data.get("folderEntity"),
+                product_name=output_instance["productName"],
+                context=instance.context,
+                product_type=output_instance["productType"],
+                version=override_version
+            )
+            output_dir = output_dir.replace("\\", "/")
+            payload["JobInfo"][f"OutputDirectory{i}"] = output_dir
 
         # add assembly jobs as dependencies
         if instance.data.get("tileRendering"):
