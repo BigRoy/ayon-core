@@ -40,7 +40,7 @@ class ValidateLookIdReferenceEdits(pyblish.api.InstancePlugin):
         if invalid:
             raise PublishValidationError(
                 "Found referenced nodes with reference edits applied"
-                " to their `cbId` attributees: {}".format(invalid)
+                " to their `cbId` attributes: {}".format(invalid)
             )
 
     @staticmethod
