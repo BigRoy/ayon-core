@@ -147,41 +147,37 @@ class ReferenceLoader(plugin.ReferenceLoader):
                               groupName=group_name,
                               **kwargs)
 
-            shapes = cmds.ls(nodes, shapes=True, long=True)
-
-            new_nodes = (list(set(nodes) - set(shapes)))
-
             # if there are cameras, try to lock their transforms
-            self._lock_camera_transforms(new_nodes)
+            self._lock_camera_transforms(nodes)
 
+            # Make sure we get the top level group, otherwise there may be
+            # conflicts if the reference itself within the namespaces contains
+            # an object with the same name as the group name
+            if not group_name.startswith("|"):
+                group_name = "|{}".format(group_name)
             current_namespace = cmds.namespaceInfo(currentNamespace=True)
-
             if current_namespace != ":":
                 group_name = current_namespace + ":" + group_name
 
+            # Exclude shapes in the containerizing
+            shapes = cmds.ls(nodes, shapes=True, long=True)
+            new_nodes = (list(set(nodes) - set(shapes)))
             self[:] = new_nodes
 
             if attach_to_root:
                 group_name = "|" + group_name
-                roots = cmds.listRelatives(group_name,
-                                           children=True,
-                                           fullPath=True) or []
 
                 if product_type not in {
                     "layout", "setdress", "mayaAscii", "mayaScene"
                 }:
+                    roots = cmds.listRelatives(group_name,
+                                               children=True,
+                                               fullPath=True) or []
                     # QUESTION Why do we need to exclude these families?
                     with parent_nodes(roots, parent=None):
                         cmds.xform(group_name, zeroTransformPivots=True)
 
                 settings = get_project_settings(project_name)
-
-                display_handle = settings['maya']['load'].get(
-                    'reference_loader', {}
-                ).get('display_handle', True)
-                cmds.setAttr(
-                    "{}.displayHandle".format(group_name), display_handle
-                )
 
                 color = plugin.get_load_color_for_product_type(
                     product_type, settings
@@ -196,25 +192,29 @@ class ReferenceLoader(plugin.ReferenceLoader):
                         blue
                     )
 
+                display_handle = settings['maya']['load'].get(
+                    'reference_loader', {}
+                ).get('display_handle', True)
                 cmds.setAttr(
                     "{}.displayHandle".format(group_name), display_handle
                 )
-                # get bounding box
-                bbox = cmds.exactWorldBoundingBox(group_name)
-                # get pivot position on world space
-                pivot = cmds.xform(group_name, q=True, sp=True, ws=True)
-                # center of bounding box
-                cx = (bbox[0] + bbox[3]) / 2
-                cy = (bbox[1] + bbox[4]) / 2
-                cz = (bbox[2] + bbox[5]) / 2
-                # add pivot position to calculate offset
-                cx = cx + pivot[0]
-                cy = cy + pivot[1]
-                cz = cz + pivot[2]
-                # set selection handle offset to center of bounding box
-                cmds.setAttr("{}.selectHandleX".format(group_name), cx)
-                cmds.setAttr("{}.selectHandleY".format(group_name), cy)
-                cmds.setAttr("{}.selectHandleZ".format(group_name), cz)
+                if display_handle:
+                    # get bounding box
+                    bbox = cmds.exactWorldBoundingBox(group_name)
+                    # get pivot position on world space
+                    pivot = cmds.xform(group_name, q=True, sp=True, ws=True)
+                    # center of bounding box
+                    cx = (bbox[0] + bbox[3]) / 2
+                    cy = (bbox[1] + bbox[4]) / 2
+                    cz = (bbox[2] + bbox[5]) / 2
+                    # add pivot position to calculate offset
+                    cx = cx + pivot[0]
+                    cy = cy + pivot[1]
+                    cz = cz + pivot[2]
+                    # set selection handle offset to center of bounding box
+                    cmds.setAttr("{}.selectHandleX".format(group_name), cx)
+                    cmds.setAttr("{}.selectHandleY".format(group_name), cy)
+                    cmds.setAttr("{}.selectHandleZ".format(group_name), cz)
 
             if product_type == "rig":
                 self._post_process_rig(namespace, context, options)
