@@ -18,8 +18,13 @@ class SetFrameRangeLoader(load.LoaderPlugin):
         "camera",
         "proxyAbc",
         "pointcache",
+        "vdbcache",
+        "usd",
+        "yeticache",
+        "render",
+        "plate"
     }
-    representations = ["abc"]
+    representations = ["*"]
 
     label = "Set frame range"
     order = 11
@@ -53,9 +58,13 @@ class SetFrameRangeWithHandlesLoader(load.LoaderPlugin):
         "camera",
         "proxyAbc",
         "pointcache",
+        "vdbcache",
+        "usd",
+        "yeticache",
+        "render",
+        "plate"
     }
-    representations = ["abc"]
-
+    representations = ["*"]
     label = "Set frame range (with handles)"
     order = 12
     icon = "clock-o"
@@ -95,21 +104,7 @@ class ImportMayaLoader(ayon_core.hosts.maya.api.plugin.Loader):
 
     """
     representations = ["ma", "mb", "obj"]
-    product_types = {
-        "model",
-        "pointcache",
-        "proxyAbc",
-        "animation",
-        "mayaAscii",
-        "mayaScene",
-        "setdress",
-        "layout",
-        "camera",
-        "rig",
-        "camerarig",
-        "staticMesh",
-        "workfile",
-    }
+    product_types = {"*"}
 
     label = "Import"
     order = 10
