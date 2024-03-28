@@ -329,8 +329,6 @@ class ProcessSubmittedJobOnFarm(pyblish.api.InstancePlugin,
                     )
                 }
             )
-        # remove secondary pool
-        payload["JobInfo"].pop("SecondaryPool", None)
 
         self.log.debug("Submitting Deadline publish job ...")
 
