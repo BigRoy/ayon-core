@@ -445,12 +445,12 @@ class AbstractSubmitDeadline(pyblish.api.InstancePlugin,
             if not self.import_reference:
                 file_path = self.from_published_scene()
             else:
-                self.log.info("use the scene with imported reference for rendering") # noqa
+                self.log.info("Use the scene with imported reference for rendering") # noqa
                 file_path = context.data["currentFile"]
 
         # fallback if nothing was set
         if not file_path:
-            self.log.warning("Falling back to workfile")
+            self.log.debug("Falling back to rendering on farm using workfile")
             file_path = context.data["currentFile"]
 
         self.scene_path = file_path
