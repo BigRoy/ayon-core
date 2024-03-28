@@ -1,11 +1,11 @@
 import ayon_api
 import pyblish.api
 
-import ayon_core.hosts.maya.api.action
 from ayon_core.pipeline.publish import (
     PublishValidationError,
     OptionalPyblishPluginMixin
 )
+
 
 class ValidateRenderLayerAOVs(pyblish.api.InstancePlugin,
                               OptionalPyblishPluginMixin):
@@ -28,7 +28,6 @@ class ValidateRenderLayerAOVs(pyblish.api.InstancePlugin,
     label = "Render Passes / AOVs Are Registered"
     hosts = ["maya"]
     families = ["renderlayer"]
-    actions = [ayon_core.hosts.maya.api.action.SelectInvalidAction]
     optional = False
 
     def process(self, instance):
