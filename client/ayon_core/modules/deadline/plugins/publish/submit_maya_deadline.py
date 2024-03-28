@@ -186,21 +186,17 @@ class MayaSubmitDeadline(abstract_submit_deadline.AbstractSubmitDeadline,
             job_info.LimitGroups = ",".join(self.limit)
 
         attr_values = self.get_attr_values_from_data(instance.data)
-        render_globals = instance.data.setdefault("renderGlobals", dict())
-        machine_list = attr_values.get("machineList", "")
-        if machine_list:
-            if attr_values.get("whitelist", True):
-                machine_list_key = "Whitelist"
-            else:
-                machine_list_key = "Blacklist"
-            render_globals[machine_list_key] = machine_list
 
         job_info.Priority = attr_values.get("priority")
         job_info.ChunkSize = attr_values.get("chunkSize")
 
         # Add options from RenderGlobals
+        # Apply render globals, like e.g. data from collect machine list
         render_globals = instance.data.get("renderGlobals", {})
-        job_info.update(render_globals)
+        if render_globals:
+            self.log.debug("Applying 'renderGlobals' to job info: %s",
+                           render_globals)
+            job_info.update(render_globals)
 
         keys = [
             "FTRACK_API_KEY",
@@ -776,17 +772,6 @@ class MayaSubmitDeadline(abstract_submit_deadline.AbstractSubmitDeadline,
                       decimals=0,
                       minimum=1,
                       maximum=1000),
-            TextDef("machineList",
-                    label="Machine List",
-                    default="",
-                    placeholder="machine1,machine2"),
-            EnumDef("whitelist",
-                    label="Machine List (Allow/Deny)",
-                    items={
-                        True: "Allow List",
-                        False: "Deny List",
-                    },
-                    default=False),
             NumberDef("tile_priority",
                       label="Tile Assembler Priority",
                       decimals=0,

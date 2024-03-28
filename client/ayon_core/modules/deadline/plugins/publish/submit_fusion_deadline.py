@@ -70,8 +70,7 @@ class FusionSubmitDeadline(
             self.log.debug("Skipping local instance.")
             return
 
-        attribute_values = self.get_attr_values_from_data(
-            instance.data)
+        attribute_values = self.get_attr_values_from_data(instance.data)
 
         context = instance.context
 
@@ -241,6 +240,13 @@ class FusionSubmitDeadline(
                 value=environment[key]
             ) for index, key in enumerate(environment)
         })
+
+        # Apply render globals, like e.g. data from collect machine list
+        render_globals = instance.data.get("renderGlobals", {})
+        if render_globals:
+            self.log.debug("Applying 'renderGlobals' to job info: %s",
+                           render_globals)
+            payload["JobInfo"].update(render_globals)
 
         self.log.debug("Submitting..")
         self.log.debug(json.dumps(payload, indent=4, sort_keys=True))
