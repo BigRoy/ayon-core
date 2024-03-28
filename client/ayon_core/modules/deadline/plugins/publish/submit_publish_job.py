@@ -255,6 +255,13 @@ class ProcessSubmittedJobOnFarm(pyblish.api.InstancePlugin,
                 "SecondaryPool": secondary_pool,
                 # ensure the outputdirectory with correct slashes
                 "OutputDirectory0": output_dir.replace("\\", "/")
+
+                # Error out early on this job since it's unlikely
+                # a subsequent publish will suddenly succeed and
+                # this avoids trying to create tons of publishes
+                # todo(colorbleed): Expose this in settings
+                "OverrideJobFailureDetection": True,
+                "FailureDetectionJobErrors": 3
             },
             "PluginInfo": {
                 "Version": self.plugin_pype_version,
