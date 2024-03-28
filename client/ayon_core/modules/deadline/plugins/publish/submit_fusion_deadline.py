@@ -10,10 +10,7 @@ import pyblish.api
 from ayon_core.pipeline.publish import (
     AYONPyblishPluginMixin
 )
-from ayon_core.lib import (
-    BoolDef,
-    NumberDef,
-)
+from ayon_core.lib import NumberDef
 
 
 class FusionSubmitDeadline(
@@ -65,11 +62,6 @@ class FusionSubmitDeadline(
                 decimals=0,
                 minimum=1,
                 maximum=10
-            ),
-            BoolDef(
-                "suspend_publish",
-                default=False,
-                label="Suspend publish"
             )
         ]
 
@@ -80,10 +72,6 @@ class FusionSubmitDeadline(
 
         attribute_values = self.get_attr_values_from_data(
             instance.data)
-
-        # add suspend_publish attributeValue to instance data
-        instance.data["suspend_publish"] = attribute_values[
-            "suspend_publish"]
 
         context = instance.context
 
