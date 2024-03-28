@@ -6,14 +6,13 @@ import clique
 import maya.cmds as cmds
 
 from ayon_core.settings import get_project_settings
-from ayon_core.pipeline import (
-    load,
-    get_representation_path
-)
+from ayon_core.pipeline import load
 from ayon_core.hosts.maya.api.lib import (
     namespaced,
     maintained_selection,
-    unique_namespace
+    unique_namespace,
+    get_container_transforms,
+    get_node_parent
 )
 from ayon_core.hosts.maya.api.pipeline import containerise
 from ayon_core.hosts.maya.api.plugin import get_load_color_for_product_type
@@ -81,7 +80,7 @@ class RedshiftProxyLoader(load.LoaderPlugin):
         rs_meshes = cmds.ls(members, type="RedshiftProxyMesh")
         assert rs_meshes, "Cannot find RedshiftProxyMesh in container"
         repre_entity = context["representation"]
-        filename = get_representation_path(repre_entity)
+        filename = self.filepath_from_context(context)
 
         for rs_mesh in rs_meshes:
             cmds.setAttr("{}.fileName".format(rs_mesh),
@@ -111,7 +110,65 @@ class RedshiftProxyLoader(load.LoaderPlugin):
                                  "still has members: %s", namespace)
 
     def switch(self, container, context):
-        self.update(container, context)
+        if container["loader"] == self.__class__.__name__:
+            self.update(container, context)
+            return
+
+        # We are switching from a different loader which likely does not
+        # have a Redshift proxy node. So we will need to mimic whatever the
+        # original container did. We just take the original parent and load
+        # a new redshift proxy under it matching the transformations.
+        self.log.info(
+            "Switching from different loader: {}".format(
+                container["loader"]
+             )
+        )
+        root = get_container_transforms(container, root=True)
+        self.log.info("Found existing root: {}".format(root))
+
+        # The parent may be the parent group of the container so it might
+        # get deleted with the removal of the original container. We
+        # collect any data we might need to recreate it.
+        parent = get_node_parent(root)
+        parent_xform = None
+        parent_parent = None
+        parent_attrs = {}
+        attrs = ["useOutlinerColor",
+                 "outlinerColorR",
+                 "outlinerColorG",
+                 "outlinerColorB"]
+        if parent:
+            self.log.info("Found previous root parent: {}".format(parent))
+            parent_xform = cmds.xform(parent,
+                                      query=True,
+                                      worldSpace=True,
+                                      matrix=True)
+            parent_parent = get_node_parent(parent)
+            parent_attrs = {
+                attr: cmds.getAttr("{}.{}".format(parent, attr))
+                for attr in attrs
+            }
+
+        # Switching from another loader - we are likely best off just
+        # mimicking any root transformations, removing the original
+        # and loading a new representation
+        load.remove_container(container)
+        new_container = self.load(context,
+                                  name=container["name"],
+                                  namespace=container["namespace"])
+        if parent:
+            if not cmds.objExists(parent):
+                self.log.info("Recreating parent: {}".format(parent))
+                # Recreate the parent we want to parent to
+                _, node_name = parent.rsplit("|", 1)
+                parent = cmds.createNode("transform", name=node_name,
+                                         parent=parent_parent)
+                cmds.xform(parent, worldSpace=True, matrix=parent_xform)
+                for attr, value in parent_attrs.items():
+                    cmds.setAttr("{}.{}".format(parent, attr), value)
+
+            new_root = get_container_transforms(new_container, root=True)
+            cmds.parent(new_root, parent, relative=True)
 
     def create_rs_proxy(self, name, path):
         """Creates Redshift Proxies showing a proxy object.
