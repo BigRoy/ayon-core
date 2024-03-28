@@ -28,6 +28,7 @@ import itertools
 from collections import OrderedDict
 
 import attr
+import clique
 
 from ayon_core.pipeline import (
     AYONPyblishPluginMixin
@@ -35,8 +36,6 @@ from ayon_core.pipeline import (
 from ayon_core.lib import (
     BoolDef,
     NumberDef,
-    TextDef,
-    EnumDef,
     is_in_tests,
 )
 from ayon_core.hosts.maya.api.lib_rendersettings import RenderSettings
@@ -56,6 +55,28 @@ def _validate_deadline_bool_value(instance, attribute, value):
             ("Value of {} must be one of "
              "'0', '1', True, False").format(attribute)
         )
+
+
+def collect_sequences(files):
+    """Collect sequences as `path/to/sequence.####.exr` entries"""
+    patterns = [clique.PATTERNS["frames"]]
+    collections, remainder = clique.assemble(files,
+                                             minimum_items=1,
+                                             patterns=patterns)
+
+    result = []
+    for col in collections:
+        # Padding in clique will be zero if the first frame doesn't start with
+        # a zero and thus has no explicit padding found, e.g. frame 1001.
+        first_frame = list(col.indexes)[0]
+        frame_padding = "#" * (col.padding or len(str(first_frame)))
+        sequence_path = col.head + frame_padding + col.tail
+        result.append(sequence_path)
+
+    # Include all of remainder paths to be sure
+    result.extend(remainder)
+
+    return result
 
 
 @attr.s
@@ -236,7 +257,7 @@ class MayaSubmitDeadline(abstract_submit_deadline.AbstractSubmitDeadline,
         # Add list of expected files to job
         # ---------------------------------
         exp = instance.data.get("expectedFiles")
-        for filepath in iter_expected_files(exp):
+        for filepath in collect_sequences(iter_expected_files(exp)):
             job_info.OutputDirectory += os.path.dirname(filepath)
             job_info.OutputFilename += os.path.basename(filepath)
 
