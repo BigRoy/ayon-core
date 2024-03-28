@@ -31,9 +31,12 @@ class MultiverseUsdLoader(load.LoaderPlugin):
     representations = ["usd", "usda", "usdc", "usdz", "abc"]
 
     label = "Load USD to Multiverse"
-    order = -10
+    order = -1
     icon = "code-fork"
     color = "orange"
+
+    # TODO: Set via settings
+    enabled = cmds.pluginInfo("MultiverseForMaya", query=True, loaded=True)
 
     def load(self, context, name=None, namespace=None, options=None):
         folder_name = context["folder"]["name"]
