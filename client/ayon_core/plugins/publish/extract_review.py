@@ -77,7 +77,6 @@ class ExtractReview(pyblish.api.InstancePlugin):
     profiles = []
 
     def process(self, instance):
-        self.log.debug(str(instance.data["representations"]))
         # Skip review when requested.
         if not instance.data.get("review", True):
             return
@@ -104,9 +103,6 @@ class ExtractReview(pyblish.api.InstancePlugin):
     def _get_outputs_for_instance(self, instance):
         host_name = instance.context.data["hostName"]
         product_type = instance.data["productType"]
-
-        self.log.debug("Host: \"{}\"".format(host_name))
-        self.log.debug("Product type: \"{}\"".format(product_type))
 
         profile = filter_profiles(
             self.profiles,
