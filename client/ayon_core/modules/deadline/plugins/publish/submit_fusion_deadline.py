@@ -1,6 +1,7 @@
 import os
 import json
 import getpass
+import platform
 
 import requests
 
@@ -184,6 +185,8 @@ class FusionSubmitDeadline(
                     start=int(instance.data["frameStartHandle"]),
                     end=int(instance.data["frameEndHandle"])
                 ),
+
+                "MachineName": platform.node(),
 
                 "Comment": comment,
             },
