@@ -45,8 +45,7 @@ class ValidateMeshVerticesHaveEdges(pyblish.api.InstancePlugin,
         # This fix only works in Maya 2016 EXT2 and newer
         if float(cmds.about(version=True)) <= 2016.0:
             raise PublishValidationError(
-                ("Repair not supported in Maya version below "
-                 "2016 EXT 2"))
+                "Repair not supported in Maya version below 2016 EXT 2")
 
         invalid = cls.get_invalid(instance)
         for node in invalid:
@@ -83,5 +82,5 @@ class ValidateMeshVerticesHaveEdges(pyblish.api.InstancePlugin,
         invalid = self.get_invalid(instance)
         if invalid:
             raise PublishValidationError(
-                ("Meshes found in instance with vertices that "
-                 "have no edges: {}").format(invalid))
+                "Meshes found in instance with vertices that "
+                "have no edges: {}".format(invalid))
