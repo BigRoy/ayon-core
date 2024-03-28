@@ -341,7 +341,6 @@ class ProcessSubmittedJobOnFarm(pyblish.api.InstancePlugin,
 
         return deadline_publish_job_id
 
-
     def process(self, instance):
         # type: (pyblish.api.Instance) -> None
         """Process plugin.
