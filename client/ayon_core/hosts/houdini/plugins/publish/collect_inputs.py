@@ -23,7 +23,7 @@ def collect_input_containers(containers, nodes):
     there are member nodes of that container.
 
     Returns:
-        list: Input avalon containers
+        list: Loaded containers that contain the `nodes`
 
     """
     # Assume the containers have collected their cached '_members' data
@@ -123,6 +123,7 @@ class CollectUpstreamInputs(pyblish.api.InstancePlugin):
                 container["_members"] = container_members
             instance.context.data["__cache_containers"] = scene_containers
 
+        inputs = []
         if scene_containers:
             # Collect all upstream parents
             nodes = list(iter_upstream(output))
@@ -132,8 +133,6 @@ class CollectUpstreamInputs(pyblish.api.InstancePlugin):
             containers = collect_input_containers(scene_containers, nodes)
 
             inputs = [c["representation"] for c in containers]
-        else:
-            inputs = []
 
         instance.data["inputRepresentations"] = inputs
         self.log.debug("Collected inputs: %s" % inputs)
