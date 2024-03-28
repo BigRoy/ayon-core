@@ -32,7 +32,7 @@ class ValidateSopOutputNode(pyblish.api.InstancePlugin):
         invalid = self.get_invalid(instance)
         if invalid:
             raise PublishValidationError(
-                "Output node(s) are incorrect",
+                "Output node is incorrect",
                 title="Invalid output node(s)"
             )
 
