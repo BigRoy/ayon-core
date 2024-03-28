@@ -535,7 +535,8 @@ class ProcessSubmittedJobOnFarm(pyblish.api.InstancePlugin,
                 version_entity = ayon_api.get_last_version_by_product_name(
                     project_name,
                     product_name,
-                    folder_entity["id"]
+                    folder_entity["id"],
+                    fields={"version"}
                 )
 
             if version_entity:
