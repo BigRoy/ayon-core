@@ -561,8 +561,8 @@ def on_before_close():
     """Delete the lock file after user quitting the Maya Scene"""
     log.info("Closing Maya...")
     # delete the lock file
-    filepath = current_file()
     if handle_workfile_locks():
+        filepath = current_file()
         remove_workfile_lock(filepath)
 
 
