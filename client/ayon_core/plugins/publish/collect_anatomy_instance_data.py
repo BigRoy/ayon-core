@@ -25,7 +25,6 @@ Provides:
     instance    -> version
     instance    -> latestVersion
 """
-
 import copy
 import json
 import collections
@@ -34,6 +33,7 @@ import pyblish.api
 import ayon_api
 
 from ayon_core.pipeline.version_start import get_versioning_start
+from ayon_core.lib.debug import is_debug_enabled
 
 
 class CollectAnatomyInstanceData(pyblish.api.ContextPlugin):
@@ -379,10 +379,12 @@ class CollectAnatomyInstanceData(pyblish.api.ContextPlugin):
             instance_label = instance.data.get("label")
             if instance_label:
                 instance_name += " ({})".format(instance_label)
-            self.log.debug("Anatomy data for instance {}: {}".format(
-                instance_name,
-                json.dumps(anatomy_data, indent=4)
-            ))
+
+            if is_debug_enabled():
+                self.log.debug("Anatomy data for instance {}: {}".format(
+                    instance_name,
+                    json.dumps(anatomy_data, indent=4)
+                ))
 
     def _fill_folder_data(self, instance, project_entity, anatomy_data):
         # QUESTION should we make sure that all folder data are poped if

@@ -7,6 +7,8 @@ import glob
 from maya import cmds  # noqa
 import pyblish.api
 from ayon_core.hosts.maya.api import lib
+from ayon_core.lib.debug import is_debug_enabled
+
 
 SHAPE_ATTRS = ["castsShadows",
                "receiveShadows",
@@ -583,7 +585,10 @@ class CollectLook(pyblish.api.InstancePlugin):
             # the <UDIM> pattern in it, to generate some logging information
             # about this difference
             # Only for file nodes with `fileTextureName` attribute
-            if attribute == "fileTextureName":
+            if (
+                    is_debug_enabled()
+                    and attribute == "fileTextureName"
+            ):
                 computed_source = cmds.getAttr(
                     "{}.computedFileTextureNamePattern".format(node)
                 )
@@ -608,12 +613,13 @@ class CollectLook(pyblish.api.InstancePlugin):
             if len(files) == 0:
                 self.log.debug("No valid files found from node `%s`" % node)
 
-            self.log.debug("collection of resource done:")
-            self.log.debug("  - node: {}".format(node))
-            self.log.debug("  - attribute: {}".format(attribute))
-            self.log.debug("  - source: {}".format(source))
-            self.log.debug("  - file: {}".format(files))
-            self.log.debug("  - color space: {}".format(color_space))
+            if is_debug_enabled():
+                self.log.debug("collection of resource done:")
+                self.log.debug("  - node: {}".format(node))
+                self.log.debug("  - attribute: {}".format(attribute))
+                self.log.debug("  - source: {}".format(source))
+                self.log.debug("  - file: {}".format(files))
+                self.log.debug("  - color space: {}".format(color_space))
 
             # Define the resource
             yield {

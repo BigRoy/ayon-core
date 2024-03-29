@@ -1,6 +1,8 @@
 import re
 import logging
 
+from ayon_core.lib.debug import is_debug_enabled
+
 log = logging.getLogger(__name__)
 
 
@@ -185,10 +187,11 @@ def filter_profiles(profiles_data, key_values, keys_order=None, logger=None):
             match = validate_value_by_regexes(value, profile.get(key))
             if match == -1:
                 profile_value = profile.get(key) or []
-                logger.debug(
-                    "\"{}\" not found in \"{}\": {}".format(value, key,
-                                                            profile_value)
-                )
+                if is_debug_enabled():
+                    logger.debug(
+                        "\"{}\" not found in \"{}\": {}".format(value, key,
+                                                                profile_value)
+                    )
                 profile_points = -1
                 break
 

@@ -17,6 +17,7 @@ import pyblish.api
 import ayon_api
 
 from ayon_core.pipeline import KnownPublishError
+from ayon_core.lib.debug import is_debug_enabled
 
 
 class CollectContextEntities(pyblish.api.ContextPlugin):
@@ -35,7 +36,8 @@ class CollectContextEntities(pyblish.api.ContextPlugin):
             raise KnownPublishError(
                 "Project '{}' was not found.".format(project_name)
             )
-        self.log.debug("Collected Project \"{}\"".format(project_entity))
+        if is_debug_enabled():
+            self.log.debug(f"Collected context project \"{project_entity}\"")
 
         context.data["projectEntity"] = project_entity
 
@@ -44,12 +46,14 @@ class CollectContextEntities(pyblish.api.ContextPlugin):
             return
 
         folder_entity = self._get_folder_entity(project_name, folder_path)
-        self.log.debug("Collected Folder \"{}\"".format(folder_entity))
+        if is_debug_enabled():
+            self.log.debug(f"Collected context folder \"{folder_entity}\"")
 
         task_entity = self._get_task_entity(
             project_name, folder_entity, task_name
         )
-        self.log.debug("Collected Task \"{}\"".format(task_entity))
+        if is_debug_enabled():
+            self.log.debug(f"Collected context task \"{task_entity}\"")
 
         context.data["folderEntity"] = folder_entity
         context.data["taskEntity"] = task_entity

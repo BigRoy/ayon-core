@@ -17,6 +17,7 @@ import json
 import pyblish.api
 
 from ayon_core.pipeline.template_data import get_template_data
+from ayon_core.lib.debug import is_debug_enabled
 
 
 class CollectAnatomyContextData(pyblish.api.ContextPlugin):
@@ -72,6 +73,7 @@ class CollectAnatomyContextData(pyblish.api.ContextPlugin):
         # Store
         context.data["anatomyData"] = anatomy_data
 
-        self.log.debug("Global Anatomy Context Data collected:\n{}".format(
-            json.dumps(anatomy_data, indent=4)
-        ))
+        if is_debug_enabled():
+            self.log.debug("Global Anatomy Context Data collected:\n{}".format(
+                json.dumps(anatomy_data, indent=4)
+            ))

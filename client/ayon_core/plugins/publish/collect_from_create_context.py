@@ -7,6 +7,7 @@ import pyblish.api
 from ayon_core.host import IPublishHost
 from ayon_core.pipeline import registered_host
 from ayon_core.pipeline.create import CreateContext
+from ayon_core.lib.debug import is_debug_enabled
 
 
 class CollectFromCreateContext(pyblish.api.ContextPlugin):
@@ -98,5 +99,6 @@ class CollectFromCreateContext(pyblish.api.ContextPlugin):
 
         instance.data["transientData"] = transient_data
 
-        self.log.debug("collected instance: {}".format(instance.data))
-        self.log.debug("parsing data: {}".format(in_data))
+        if is_debug_enabled():
+            self.log.debug("collected instance: {}".format(instance.data))
+            self.log.debug("parsing data: {}".format(in_data))
