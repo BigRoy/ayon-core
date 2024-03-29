@@ -323,10 +323,13 @@ def _remove_workfile_lock():
 
 
 def handle_workfile_locks():
-    if lib.IS_HEADLESS:
-        return False
-    project_name = get_current_project_name()
-    return is_workfile_lock_enabled(MayaHost.name, project_name)
+    # Colorbleed edit: Optimization (just never handle file locks)
+    return False
+
+    # if lib.IS_HEADLESS:
+    #     return False
+    # project_name = get_current_project_name()
+    # return is_workfile_lock_enabled(MayaHost.name, project_name)
 
 
 def uninstall():
