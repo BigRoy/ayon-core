@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Create ``Render`` instance in Maya."""
+from maya import cmds
 
 from ayon_core.hosts.maya.api import (
     lib_rendersettings,
@@ -50,6 +51,38 @@ class CreateRenderlayer(plugin.RenderlayerCreator):
         super(CreateRenderlayer, self).create(product_name,
                                               instance_data,
                                               pre_create_data)
+
+    def read_instance_node_overrides(self,
+                                     instance_node,
+                                     layer,
+                                     data):
+        """Read active state from the actual rendersetup layer itself"""
+        if "active" in data:
+            # Backwards compatibility: previously this was stored as data
+            #   on the instance node. So if this data is found we assume its
+            #   before this active state was read from renderlayers.
+            #   We update the renderlayer state to match instance node value
+            #   so scenes publish like before - and make sure to remove the
+            #   value from the instance node itself.
+            self.log.info(
+                "Moving 'active' state from instance node "
+                "{} to renderlayer {}".format(instance_node, layer.name())
+            )
+            layer.setRenderable(data["active"])
+            if cmds.attributeQuery("active", node=instance_node, exists=True):
+                cmds.deleteAttr("{}.active".format(instance_node))
+
+        data["active"] = layer.isRenderable()
+        return data
+
+    def imprint_instance_node_data_overrides(self, data, instance):
+        """Set active state on the actual rendersetup layer itself"""
+        if "active" in data:
+            # Set active state to renderlayer
+            layer = instance.transient_data["layer"]
+            layer.setRenderable(data.pop("active"))
+
+        return data
 
     def get_instance_attr_defs(self):
         """Create instance settings."""
