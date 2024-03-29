@@ -34,3 +34,13 @@ class OpenFile(load.LoaderPlugin):
 
         self.log.info("Opening : {}".format(path))
         open(path)
+
+
+# Allow to open some review video files too. This is separate so we don't show
+# "open" button for *all* review output files like thumbnails or images, etc.
+class OpenVideoFile(OpenFile):
+    """Open review video files"""
+
+    label = "Open"
+    product_types = {"review"}
+    representations = ["h264_png", "h264_exr", "h264_tif", "h264_jpg"]
