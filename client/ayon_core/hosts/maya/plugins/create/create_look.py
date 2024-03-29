@@ -62,7 +62,7 @@ class CreateLook(plugin.MayaCreator):
                     label="Renderlayer",
                     tooltip="Renderlayer to extract the look from"),
             BoolDef("maketx",
-                    label="MakeTX",
+                    label="Convert textures to .tx",
                     tooltip="Whether to generate .tx files for your textures",
                     default=self.make_tx),
             BoolDef("rstex",
