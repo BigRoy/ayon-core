@@ -327,8 +327,8 @@ class MakeTX(TextureProcessor):
             render_colorspace = color_management["rendering_space"]
 
             self.log.debug("tx: converting colorspace {0} "
-                          "-> {1}".format(colorspace,
-                                          render_colorspace))
+                          " -> {1}".format(colorspace,
+                                           render_colorspace))
             args.extend(["--colorconvert", colorspace, render_colorspace])
             args.extend(["--colorconfig", config_path])
 
