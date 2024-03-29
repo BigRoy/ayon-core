@@ -1,11 +1,30 @@
 from ayon_core.hosts.maya.api import (
-    plugin,
-    lib
+    plugin
 )
 from ayon_core.lib import (
     BoolDef,
-    TextDef
+    EnumDef
 )
+
+from maya import cmds
+from maya.app.renderSetup.model import renderSetup
+
+
+def get_legacy_layer_name(layer) -> str:
+    """Return legacy render layer name from render setup layer"""
+    if hasattr(layer, "legacyRenderLayer"):
+        connections = cmds.listConnections(
+            "{}.legacyRenderLayer".format(layer.name()),
+            type="renderLayer",
+            exactType=True,
+            source=True,
+            destination=False,
+            plugs=False
+        ) or []
+        return next(iter(connections), None)
+    else:
+        # e.g. for DefaultRenderLayer
+        return layer.name()
 
 
 class CreateLook(plugin.MayaCreator):
@@ -19,14 +38,27 @@ class CreateLook(plugin.MayaCreator):
     make_tx = True
     rs_tex = False
 
-    def get_instance_attr_defs(self):
+    # Cache in `apply_settings`
+    renderlayers = {}
 
+    def apply_settings(self, project_settings):
+        super(CreateLook, self).apply_settings(project_settings)
+
+        # Get render setup layers and their legacy names since we use the
+        # legacy names to toggle to those layers in the codebase.
+        rs = renderSetup.instance()
+        renderlayers = [rs.getDefaultRenderLayer()]
+        renderlayers.extend(rs.getRenderLayers())
+        self.renderlayers = {
+            get_legacy_layer_name(layer): layer.name()
+            for layer in renderlayers
+        }
+
+    def get_instance_attr_defs(self):
         return [
-            # TODO: This value should actually get set on create!
-            TextDef("renderLayer",
-                    # TODO: Bug: Hidden attribute's label is still shown in UI?
-                    hidden=True,
-                    default=lib.get_current_renderlayer(),
+            EnumDef("renderLayer",
+                    default="defaultRenderLayer",
+                    items=self.renderlayers,
                     label="Renderlayer",
                     tooltip="Renderlayer to extract the look from"),
             BoolDef("maketx",
