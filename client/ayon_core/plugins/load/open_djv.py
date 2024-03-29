@@ -28,7 +28,7 @@ class OpenInDJV(load.LoaderPlugin):
     }
 
     label = "Open in DJV"
-    order = -10
+    order = 2
     icon = "play-circle"
     color = "orange"
 
