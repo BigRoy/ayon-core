@@ -22,7 +22,7 @@ class OpenFile(load.LoaderPlugin):
     representations = ["*"]
 
     label = "Open"
-    order = -10
+    order = 1
     icon = "play-circle"
     color = "orange"
 
