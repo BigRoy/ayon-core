@@ -47,6 +47,7 @@ from ayon_core.hosts.maya.api.lib_renderproducts import (
     UnsupportedRendererException
 )
 from ayon_core.hosts.maya.api import lib
+from ayon_core.lib.debug import is_debug_enabled
 
 
 class CollectMayaRender(pyblish.api.InstancePlugin):
@@ -140,12 +141,13 @@ class CollectMayaRender(pyblish.api.InstancePlugin):
             self.log.warning(
                 "No file names were generated, this is a bug.")
 
-        for render_product in render_products:
-            self.log.debug(render_product)
-        self.log.debug("multipart: {}".format(multipart))
-        self.log.debug("expected files: {}".format(
-            json.dumps(expected_files, indent=4, sort_keys=True)
-        ))
+        if is_debug_enabled():
+            for render_product in render_products:
+                self.log.debug(render_product)
+            self.log.debug("multipart: {}".format(multipart))
+            self.log.debug("expected files: {}".format(
+                json.dumps(expected_files, indent=4, sort_keys=True)
+            ))
 
         # if we want to attach render to product, check if we have AOV's
         # in expectedFiles. If so, raise error as we cannot attach AOV
