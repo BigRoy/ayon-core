@@ -2,13 +2,15 @@ import pyblish.api
 
 from ayon_core.pipeline.publish import (
     ValidatePipelineOrder,
-    PublishXmlValidationError
+    PublishXmlValidationError,
+    OpenPypePyblishPluginMixin
 )
 import ayon_core.hosts.maya.api.action
 from ayon_core.hosts.maya.api import lib
 
 
-class ValidateNodeIDs(pyblish.api.InstancePlugin):
+class ValidateNodeIDs(pyblish.api.InstancePlugin,
+                      OpenPypePyblishPluginMixin):
     """Validate nodes have a Colorbleed Id.
 
     When IDs are missing from nodes *save your scene* and they should be
