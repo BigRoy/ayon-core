@@ -38,7 +38,7 @@ from ayon_core.pipeline import (
     AYON_CONTAINER_ID,
 )
 from ayon_core.lib import NumberDef
-from ayon_core.pipeline.context_tools import get_current_project_folder
+from ayon_core.pipeline.context_tools import get_current_task_entity
 from ayon_core.pipeline.create import CreateContext
 from ayon_core.lib.profiles_filtering import filter_profiles
 
@@ -2751,21 +2751,21 @@ def reset_frame_range(playback=True, render=True, fps=True):
 def reset_scene_resolution():
     """Apply the scene resolution  from the project definition
 
-    scene resolution can be overwritten by an folder if the folder.attrib
-    contains any information regarding scene resolution .
+    The scene resolution will be retrieved from the current task entity's
+    attributes.
 
     Returns:
         None
     """
 
-    folder_attributes = get_current_project_folder()["attrib"]
+    task_attributes = get_current_task_entity(fields={"attrib"})["attrib"]
 
     # Set resolution
-    width = folder_attributes.get("resolutionWidth", 1920)
-    height = folder_attributes.get("resolutionHeight", 1080)
-    pixelAspect = folder_attributes.get("pixelAspect", 1)
+    width = task_attributes.get("resolutionWidth", 1920)
+    height = task_attributes.get("resolutionHeight", 1080)
+    pixel_aspect = task_attributes.get("pixelAspect", 1)
 
-    set_scene_resolution(width, height, pixelAspect)
+    set_scene_resolution(width, height, pixel_aspect)
 
 
 def set_context_settings(
@@ -3370,39 +3370,46 @@ def update_content_on_context_change():
     `frameEnd` attributes to match the current folder entity's attributes.
 
     """
-    scene_sets = cmds.ls(cmds.listSets(allSets=True))
-    folder_entity = get_current_project_folder()
-    folder_attributes = folder_entity["attrib"]
-    new_folder_path = folder_entity["path"]
-    new_task = get_current_task_name()
-    for s in scene_sets:
-        # Only consider instances
-        if not cmds.attributeQuery("id", node=s, exists=True):
-            continue
-        if cmds.getAttr(f"{s}.id") not in {
-            AYON_INSTANCE_ID, AVALON_INSTANCE_ID
-        }:
-            continue
 
-        print(f"Matching instance with current context: {s}")
-        # Update context folder and task
-        if cmds.attributeQuery("folderPath", node=s, exists=True):
-            print(f"  - setting folderPath to: [ {new_folder_path} ]")
-            cmds.setAttr(f"{s}.folderPath", new_folder_path, type="string")
+    host = registered_host()
+    create_context = CreateContext(host)
+    folder_entity = get_current_task_entity(fields={"attrib"})
 
-        # TODO: Technically changing the task *can* change the publish subset
-        #  name and thus should actually go through the CreateContext logic
-        #  to redefine the subset name if it needs to.
-        if cmds.attributeQuery("task", node=s, exists=True):
-            print(f"  - setting task to: [ {new_task} ]")
-            cmds.setAttr(f"{s}.task", new_task, type="string")
+    instance_values = {
+        "folderPath": create_context.get_current_folder_path(),
+        "task": create_context.get_current_task_name(),
+    }
+    creator_attribute_values = {
+        "frameStart": folder_entity["attrib"]["frameStart"],
+        "frameEnd": folder_entity["attrib"]["frameEnd"],
+    }
 
-        # Match frame range of instance with folder
-        if cmds.attributeQuery("frameStart", node=s, exists=True):
-            cmds.setAttr(f"{s}.frameStart", folder_attributes["frameStart"])
+    has_changes = False
+    for instance in create_context.instances:
+        for key, value in instance_values.items():
+            if key not in instance or instance[key] == value:
+                continue
 
-        if cmds.attributeQuery("frameEnd", node=s, exists=True):
-            cmds.setAttr(f"{s}.frameEnd", folder_attributes["frameEnd"])
+            # Update instance value
+            print(f"Updating {instance.product_name} {key} to: {value}")
+            instance[key] = value
+            has_changes = True
+
+        creator_attributes = instance.creator_attributes
+        for key, value in creator_attribute_values.items():
+            if (
+                    key not in creator_attributes
+                    or creator_attributes[key] == value
+            ):
+                continue
+
+            # Update instance creator attribute value
+            print(f"Updating {instance.product_name} {key} to: {value}")
+            instance[key] = value
+            has_changes = True
+
+    if has_changes:
+        create_context.save_changes()
 
 
 def show_message(title, msg):
