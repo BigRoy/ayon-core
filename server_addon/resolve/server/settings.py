@@ -102,6 +102,7 @@ class MetadataMappingModel(BaseSettingsModel):
 
 
 class LoadMediaModel(BaseSettingsModel):
+    enabled: bool = SettingsField(title="Enabled")
     clip_color_last: str = SettingsField(
         "Olive",
         title="Clip color for last version"
@@ -130,10 +131,18 @@ class LoadMediaModel(BaseSettingsModel):
         return value
 
 
+class LoadClipModel(BaseSettingsModel):
+    enabled: bool = SettingsField(title="Enabled")
+
+
 class LoaderPluginsModel(BaseSettingsModel):
     LoadMedia: LoadMediaModel = SettingsField(
         default_factory=LoadMediaModel,
         title="Load Media"
+    )
+    LoadClip: LoadClipModel = SettingsField(
+        default_factory=LoadClipModel,
+        title="Load Clip"
     )
 
 
@@ -177,6 +186,7 @@ DEFAULT_VALUES = {
     },
     "load": {
         "LoadMedia": {
+            "enabled": True,
             "clip_color_last": "Olive",
             "clip_color_old": "Orange",
             "media_pool_bin_path": (
@@ -203,6 +213,9 @@ DEFAULT_VALUES = {
                     )
                 }
             ]
+        },
+        "LoadClip": {
+            "enabled": True
         }
     }
 }
