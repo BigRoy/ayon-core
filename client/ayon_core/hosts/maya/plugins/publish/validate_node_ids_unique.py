@@ -20,8 +20,8 @@ class ValidateNodeIdsUnique(pyblish.api.InstancePlugin):
     hosts = ['maya']
     families = ["model",
                 "look",
-                "rig",
-                "yetiRig"]
+                "yetiRig",
+                "yeticache"]
 
     actions = [ayon_core.hosts.maya.api.action.SelectInvalidAction,
                ayon_core.hosts.maya.api.action.GenerateUUIDsOnInvalidAction]
@@ -74,3 +74,9 @@ class ValidateNodeIdsUnique(pyblish.api.InstancePlugin):
                 invalid.extend(members)
 
         return invalid
+
+
+class ValidateNodeIdsUniqueRig(ValidateNodeIdsUnique):
+    """Allow to be optional only for rig family"""
+    families = ["rig"]
+    optional = True
