@@ -3251,7 +3251,7 @@ def load_capture_preset(data):
     return options
 
 
-def get_attr_in_layer(attr, layer):
+def get_attr_in_layer(attr, layer, as_string=True):
     """Return attribute value in specified renderlayer.
 
     Same as cmds.getAttr but this gets the attribute's value in a
@@ -3269,6 +3269,7 @@ def get_attr_in_layer(attr, layer):
     Args:
         attr (str): attribute name, ex. "node.attribute"
         layer (str): layer name
+        as_string (bool): whether attribute should convert to a string value
 
     Returns:
         The return value from `maya.cmds.getAttr`
@@ -3278,7 +3279,8 @@ def get_attr_in_layer(attr, layer):
     try:
         if cmds.mayaHasRenderSetup():
             from . import lib_rendersetup
-            return lib_rendersetup.get_attr_in_layer(attr, layer)
+            return lib_rendersetup.get_attr_in_layer(
+                attr, layer, as_string=as_string)
     except AttributeError:
         pass
 
@@ -3286,7 +3288,7 @@ def get_attr_in_layer(attr, layer):
     current_layer = cmds.editRenderLayerGlobals(query=True,
                                                 currentRenderLayer=True)
     if layer == current_layer:
-        return cmds.getAttr(attr)
+        return cmds.getAttr(attr, asString=as_string)
 
     connections = cmds.listConnections(attr,
                                        plugs=True,
@@ -3337,7 +3339,7 @@ def get_attr_in_layer(attr, layer):
                         value *= conversion
                     return value
 
-    return cmds.getAttr(attr)
+    return cmds.getAttr(attr, asString=as_string)
 
 
 def fix_incompatible_containers():
