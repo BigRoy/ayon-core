@@ -24,7 +24,7 @@ class SetFrameRangeLoader(load.LoaderPlugin):
         "render",
         "plate"
     }
-    representations = ["*"]
+    representations = {"*"}
 
     label = "Set frame range"
     order = 11
@@ -64,7 +64,7 @@ class SetFrameRangeWithHandlesLoader(load.LoaderPlugin):
         "render",
         "plate"
     }
-    representations = ["*"]
+    representations = {"*"}
     label = "Set frame range (with handles)"
     order = 12
     icon = "clock-o"
@@ -103,7 +103,7 @@ class ImportMayaLoader(ayon_core.hosts.maya.api.plugin.Loader):
         so you could also use it as a new base.
 
     """
-    representations = ["ma", "mb", "obj"]
+    representations = {"ma", "mb", "obj"}
     product_types = {"*"}
 
     label = "Import"

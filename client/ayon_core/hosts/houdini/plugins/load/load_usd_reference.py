@@ -11,7 +11,7 @@ class USDReferenceLoader(load.LoaderPlugin):
 
     product_types = {"*"}
     label = "Reference USD"
-    representations = ["usd", "usda", "usdlc", "usdnc", "abc"]
+    representations = {"usd", "usda", "usdlc", "usdnc", "abc"}
     order = -8
 
     icon = "code-fork"

@@ -17,7 +17,7 @@ class FusionSetFrameRangeLoader(load.LoaderPlugin):
         "yeticache",
         "pointcache",
     }
-    representations = ["*"]
+    representations = {"*"}
     extensions = {"*"}
 
     label = "Set frame range"
@@ -54,7 +54,7 @@ class FusionSetFrameRangeWithHandlesLoader(load.LoaderPlugin):
         "yeticache",
         "pointcache",
     }
-    representations = ["*"]
+    representations = {"*"}
 
     label = "Set frame range (with handles)"
     order = 12

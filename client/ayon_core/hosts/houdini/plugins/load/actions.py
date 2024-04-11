@@ -19,7 +19,7 @@ class SetFrameRangeLoader(load.LoaderPlugin):
         "mayaScene",
         "review"
     }
-    representations = ["*"]
+    representations = {"*"}
 
     label = "Set frame range"
     order = 11
@@ -60,7 +60,7 @@ class SetFrameRangeWithHandlesLoader(load.LoaderPlugin):
         "mayaScene",
         "review"
     }
-    representations = ["*"]
+    representations = {"*"}
 
     label = "Set frame range (with handles)"
     order = 12

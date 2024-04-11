@@ -11,7 +11,7 @@ class USDSublayerLoader(load.LoaderPlugin):
 
     product_types = {"*"}
     label = "Sublayer USD"
-    representations = ["usd", "usda", "usdlc", "usdnc", "abc"]
+    representations = {"usd", "usda", "usdlc", "usdnc", "abc"}
     order = -7
 
     icon = "code-fork"
