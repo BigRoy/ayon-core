@@ -2,6 +2,7 @@
 
 import os
 import contextlib
+import uuid
 
 import ayon_api
 from ayon_api import (
@@ -22,6 +23,15 @@ from ayon_core.pipeline.context_tools import get_current_project_name
 from ayon_core.hosts.houdini.api import lib
 
 import hou
+
+
+def is_valid_uuid(value) -> bool:
+    """Return whether value is a valid UUID"""
+    try:
+        uuid.UUID(value)
+    except ValueError:
+        return False
+    return True
 
 
 @contextlib.contextmanager
@@ -92,10 +102,11 @@ def update_info(node, context):
     version = str(context["version"]["version"])
 
     # We only set the values if the value does not match the currently
-    # evaluated result of the other parms, so that if the the project name
+    # evaluated result of the other parms, so that if the project name
     # value was dynamically set by the user with an expression or alike
     # then if it still matches the value of the current representation id
-    # we preserve it
+    # we preserve it. In essence, only update the value if the current
+    # *evaluated* value of the parm differs.
     parms = {
         "project_name": context["project"]["name"],
         "folder_path": context["folder"]["path"],
@@ -137,9 +148,10 @@ def set_representation(node, repre_id):
     if repre_id:
         project_name = node.evalParm("project_name") or \
                        get_current_project_name()
-        try:
+
+        if is_valid_uuid(repre_id):
             repre_entity = get_representation_by_id(project_name, repre_id)
-        except Exception:
+        else:
             # Ignore invalid representation ids silently
             repre_entity = None
 
@@ -320,24 +332,24 @@ def get_representation_id(
     if not product_entity:
         load_message_parm.set(f"Product not found: '{product_name}'")
         return
-    version_doc = get_version_by_name(
+    version_entity = get_version_by_name(
         project_name,
         version,
         product_id=product_entity["id"],
         fields=id_only)
-    if not version_doc:
+    if not version_entity:
         load_message_parm.set(f"Version not found: '{version}'")
         return
-    representation_doc = get_representation_by_name(
+    representation_entity = get_representation_by_name(
         project_name,
         representation_name,
-        version_id=version_doc["id"],
+        version_id=version_entity["id"],
         fields=id_only)
-    if not representation_doc:
+    if not representation_entity:
         load_message_parm.set(
             f"Representation not found: '{representation_name}'.")
         return
-    return representation_doc["id"]
+    return representation_entity["id"]
 
 
 def setup_flag_changed_callback(node):
