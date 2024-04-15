@@ -516,9 +516,14 @@ class AbstractTemplateBuilder(object):
                                               process if version is created
 
         """
-        if any(value is None for value in [template_path,
-                                           keep_placeholders,
-                                           create_first_version]):
+        if any(
+            value is None
+            for value in [
+                template_path,
+                keep_placeholders,
+                create_first_version,
+            ]
+        ):
             template_preset = self.get_template_preset()
             if template_path is None:
                 template_path = template_preset["path"]
@@ -1543,7 +1548,9 @@ class PlaceholderLoadMixin(object):
         product_name_regex = None
         if product_name_regex_value:
             product_name_regex = re.compile(product_name_regex_value)
-        product_type = placeholder.data["product_type"]
+        product_type = placeholder.data.get("product_type")
+        if product_type is None:
+            product_type = placeholder.data["family"]
 
         builder_type = placeholder.data["builder_type"]
         folder_ids = []
