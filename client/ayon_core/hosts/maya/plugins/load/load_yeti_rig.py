@@ -5,8 +5,8 @@ import maya.cmds as cmds
 from ayon_core.hosts.maya.api import plugin
 from ayon_core.hosts.maya.api import lib
 
-from openpype.pipeline import registered_host
-from openpype.pipeline.create import CreateContext
+from ayon_core.pipeline import registered_host
+from ayon_core.pipeline.create import CreateContext
 
 
 class YetiRigLoader(plugin.ReferenceLoader):
@@ -19,6 +19,9 @@ class YetiRigLoader(plugin.ReferenceLoader):
     order = -9
     icon = "code-fork"
     color = "orange"
+
+    # From settings
+    create_cache_instance_on_load = True
 
     def process_reference(
         self, context, name=None, namespace=None, options=None
@@ -54,9 +57,10 @@ class YetiRigLoader(plugin.ReferenceLoader):
             )
         self[:] = nodes
 
-        # Automatically create in instance to allow publishing the loaded
-        # yeti rig into a yeti cache
-        self._create_yeti_cache_instance(nodes, variant=namespace)
+        if self.create_cache_instance_on_load:
+            # Automatically create in instance to allow publishing the loaded
+            # yeti rig into a yeti cache
+            self._create_yeti_cache_instance(nodes, variant=namespace)
 
         return nodes
 
