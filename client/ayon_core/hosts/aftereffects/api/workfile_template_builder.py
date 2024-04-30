@@ -1,6 +1,7 @@
 import os.path
 import uuid
 import shutil
+from abc import abstractmethod
 
 from ayon_core.pipeline import registered_host
 from ayon_core.tools.workfile_template_build import (
@@ -9,7 +10,7 @@ from ayon_core.tools.workfile_template_build import (
 from ayon_core.pipeline.workfile.workfile_template_builder import (
     AbstractTemplateBuilder,
     PlaceholderPlugin,
-    PlaceholderItem,
+    PlaceholderItem
 )
 from ayon_core.hosts.aftereffects.api import get_stub
 
@@ -47,7 +48,9 @@ class AETemplateBuilder(AbstractTemplateBuilder):
 class AEPlaceholderPlugin(PlaceholderPlugin):
     """Contains generic methods for all PlaceholderPlugins."""
 
-    item_type = PlaceholderItem
+    @abstractmethod
+    def _create_placeholder_item(self, item_data: dict) -> PlaceholderItem:
+        pass
 
     def collect_placeholders(self):
         """Collect info from file metadata about created placeholders.
@@ -61,12 +64,7 @@ class AEPlaceholderPlugin(PlaceholderPlugin):
             if item.get("plugin_identifier") != self.identifier:
                 continue
 
-            item = self.item_type(
-                scene_identifier=item["uuid"],
-                data=item["data"],
-                plugin=self
-            )
-
+            item = self._create_placeholder_item(item)
             output.append(item)
 
         return output

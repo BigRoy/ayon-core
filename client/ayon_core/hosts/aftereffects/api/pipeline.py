@@ -8,13 +8,10 @@ from ayon_core.lib import Logger, register_event_callback
 from ayon_core.pipeline import (
     register_loader_plugin_path,
     register_creator_plugin_path,
+    register_workfile_build_plugin_path,
     AVALON_CONTAINER_ID,
     AVALON_INSTANCE_ID,
     AYON_INSTANCE_ID,
-)
-from ayon_core.pipeline.plugin_discover import register_plugin_path
-from ayon_core.pipeline.workfile.workfile_template_builder import (
-    PlaceholderPlugin
 )
 from ayon_core.pipeline.load import any_outdated_containers
 import ayon_core.hosts.aftereffects
@@ -40,7 +37,7 @@ PLUGINS_DIR = os.path.join(HOST_DIR, "plugins")
 PUBLISH_PATH = os.path.join(PLUGINS_DIR, "publish")
 LOAD_PATH = os.path.join(PLUGINS_DIR, "load")
 CREATE_PATH = os.path.join(PLUGINS_DIR, "create")
-TEMPLATE_PLUGINS_PATH = os.path.join(PLUGINS_DIR, "template_loaders")
+WORKFILE_BUILD_PATH = os.path.join(PLUGINS_DIR, "workfile_build")
 
 
 class AfterEffectsHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
@@ -77,8 +74,7 @@ class AfterEffectsHost(HostBase, IWorkfileHost, ILoadHost, IPublishHost):
 
         register_loader_plugin_path(LOAD_PATH)
         register_creator_plugin_path(CREATE_PATH)
-        # TODO: Expose this via a dedicated `register_template_plugin_path`
-        register_plugin_path(PlaceholderPlugin, TEMPLATE_PLUGINS_PATH)
+        register_workfile_build_plugin_path(WORKFILE_BUILD_PATH)
 
         register_event_callback("application.launched", application_launch)
 

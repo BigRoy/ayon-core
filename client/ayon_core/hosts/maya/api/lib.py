@@ -6,7 +6,6 @@ from pprint import pformat
 import sys
 import uuid
 import re
-import operator
 
 import json
 import logging
@@ -70,37 +69,6 @@ DEFAULT_MATRIX = [1.0, 0.0, 0.0, 0.0,
                   0.0, 1.0, 0.0, 0.0,
                   0.0, 0.0, 1.0, 0.0,
                   0.0, 0.0, 0.0, 1.0]
-
-# The maya alembic export types
-_alembic_options = {
-    "startFrame": float,
-    "endFrame": float,
-    "frameRange": str,  # "start end"; overrides startFrame & endFrame
-    "eulerFilter": bool,
-    "frameRelativeSample": float,
-    "noNormals": bool,
-    "renderableOnly": bool,
-    "step": float,
-    "stripNamespaces": bool,
-    "uvWrite": bool,
-    "wholeFrameGeo": bool,
-    "worldSpace": bool,
-    "writeVisibility": bool,
-    "writeColorSets": bool,
-    "writeFaceSets": bool,
-    "writeCreases": bool,  # Maya 2015 Ext1+
-    "writeUVSets": bool,   # Maya 2017+
-    "dataFormat": str,
-    "root": (list, tuple),
-    "attr": (list, tuple),
-    "attrPrefix": (list, tuple),
-    "userAttr": (list, tuple),
-    "melPerFrameCallback": str,
-    "melPostJobCallback": str,
-    "pythonPerFrameCallback": str,
-    "pythonPostJobCallback": str,
-    "selection": bool
-}
 
 INT_FPS = {15, 24, 25, 30, 48, 50, 60, 44100, 48000}
 FLOAT_FPS = {23.98, 23.976, 29.97, 47.952, 59.94}
@@ -1347,178 +1315,6 @@ def is_visible(node,
 
     return True
 
-
-def extract_alembic(file,
-                    startFrame=None,
-                    endFrame=None,
-                    selection=True,
-                    uvWrite=True,
-                    eulerFilter=True,
-                    dataFormat="ogawa",
-                    verbose=False,
-                    **kwargs):
-    """Extract a single Alembic Cache.
-
-    This extracts an Alembic cache using the `-selection` flag to minimize
-    the extracted content to solely what was Collected into the instance.
-
-    Arguments:
-
-        startFrame (float): Start frame of output. Ignored if `frameRange`
-            provided.
-
-        endFrame (float): End frame of output. Ignored if `frameRange`
-            provided.
-
-        frameRange (tuple or str): Two-tuple with start and end frame or a
-            string formatted as: "startFrame endFrame". This argument
-            overrides `startFrame` and `endFrame` arguments.
-
-        dataFormat (str): The data format to use for the cache,
-                          defaults to "ogawa"
-
-        verbose (bool): When on, outputs frame number information to the
-            Script Editor or output window during extraction.
-
-        noNormals (bool): When on, normal data from the original polygon
-            objects is not included in the exported Alembic cache file.
-
-        renderableOnly (bool): When on, any non-renderable nodes or hierarchy,
-            such as hidden objects, are not included in the Alembic file.
-            Defaults to False.
-
-        stripNamespaces (bool): When on, any namespaces associated with the
-            exported objects are removed from the Alembic file. For example, an
-            object with the namespace taco:foo:bar appears as bar in the
-            Alembic file.
-
-        uvWrite (bool): When on, UV data from polygon meshes and subdivision
-            objects are written to the Alembic file. Only the current UV map is
-            included.
-
-        worldSpace (bool): When on, the top node in the node hierarchy is
-            stored as world space. By default, these nodes are stored as local
-            space. Defaults to False.
-
-        eulerFilter (bool): When on, X, Y, and Z rotation data is filtered with
-            an Euler filter. Euler filtering helps resolve irregularities in
-            rotations especially if X, Y, and Z rotations exceed 360 degrees.
-            Defaults to True.
-
-    """
-
-    # Ensure alembic exporter is loaded
-    cmds.loadPlugin('AbcExport', quiet=True)
-
-    # Alembic Exporter requires forward slashes
-    file = file.replace('\\', '/')
-
-    # Pass the start and end frame on as `frameRange` so that it
-    # never conflicts with that argument
-    if "frameRange" not in kwargs:
-        # Fallback to maya timeline if no start or end frame provided.
-        if startFrame is None:
-            startFrame = cmds.playbackOptions(query=True,
-                                              animationStartTime=True)
-        if endFrame is None:
-            endFrame = cmds.playbackOptions(query=True,
-                                            animationEndTime=True)
-
-        # Ensure valid types are converted to frame range
-        assert isinstance(startFrame, _alembic_options["startFrame"])
-        assert isinstance(endFrame, _alembic_options["endFrame"])
-        kwargs["frameRange"] = "{0} {1}".format(startFrame, endFrame)
-    else:
-        # Allow conversion from tuple for `frameRange`
-        frame_range = kwargs["frameRange"]
-        if isinstance(frame_range, (list, tuple)):
-            assert len(frame_range) == 2
-            kwargs["frameRange"] = "{0} {1}".format(frame_range[0],
-                                                    frame_range[1])
-
-    # Assemble options
-    options = {
-        "selection": selection,
-        "uvWrite": uvWrite,
-        "eulerFilter": eulerFilter,
-        "dataFormat": dataFormat
-    }
-    options.update(kwargs)
-
-    # Validate options
-    for key, value in options.copy().items():
-
-        # Discard unknown options
-        if key not in _alembic_options:
-            log.warning("extract_alembic() does not support option '%s'. "
-                        "Flag will be ignored..", key)
-            options.pop(key)
-            continue
-
-        # Validate value type
-        valid_types = _alembic_options[key]
-        if not isinstance(value, valid_types):
-            raise TypeError("Alembic option unsupported type: "
-                            "{0} (expected {1})".format(value, valid_types))
-
-        # Ignore empty values, like an empty string, since they mess up how
-        # job arguments are built
-        if isinstance(value, (list, tuple)):
-            value = [x for x in value if x.strip()]
-
-            # Ignore option completely if no values remaining
-            if not value:
-                options.pop(key)
-                continue
-
-            options[key] = value
-
-    # The `writeCreases` argument was changed to `autoSubd` in Maya 2018+
-    maya_version = int(cmds.about(version=True))
-    if maya_version >= 2018:
-        options['autoSubd'] = options.pop('writeCreases', False)
-
-    # Format the job string from options
-    job_args = list()
-    for key, value in options.items():
-        if isinstance(value, (list, tuple)):
-            for entry in value:
-                job_args.append("-{} {}".format(key, entry))
-        elif isinstance(value, bool):
-            # Add only when state is set to True
-            if value:
-                job_args.append("-{0}".format(key))
-        else:
-            job_args.append("-{0} {1}".format(key, value))
-
-    job_str = " ".join(job_args)
-    job_str += ' -file "%s"' % file
-
-    # Ensure output directory exists
-    parent_dir = os.path.dirname(file)
-    if not os.path.exists(parent_dir):
-        os.makedirs(parent_dir)
-
-    if verbose:
-        log.debug("Preparing Alembic export with options: %s",
-                  json.dumps(options, indent=4))
-        log.debug("Extracting Alembic with job arguments: %s", job_str)
-
-    # Perform extraction
-    print("Alembic Job Arguments : {}".format(job_str))
-
-    # Disable the parallel evaluation temporarily to ensure no buggy
-    # exports are made. (PLN-31)
-    # TODO: Make sure this actually fixes the issues
-    with evaluation("off"):
-        cmds.AbcExport(j=job_str, verbose=verbose)
-
-    if verbose:
-        log.debug("Extracted Alembic to: %s", file)
-
-    return file
-
-
 # region ID
 def get_id_required_nodes(referenced_nodes=False,
                           nodes=None,
@@ -2525,7 +2321,16 @@ def set_scene_fps(fps, update=True):
     """
 
     fps_mapping = {
+        '2': '2fps',
+        '3': '3fps',
+        '4': '4fps',
+        '5': '5fps',
+        '6': '6fps',
+        '8': '8fps',
+        '10': '10fps',
+        '12': '12fps',
         '15': 'game',
+        '16': '16fps',
         '24': 'film',
         '25': 'pal',
         '30': 'ntsc',
@@ -2618,21 +2423,24 @@ def get_fps_for_current_context():
     Returns:
         Union[int, float]: FPS value.
     """
-
-    project_name = get_current_project_name()
-    folder_path = get_current_folder_path()
-    folder_entity = ayon_api.get_folder_by_path(
-        project_name, folder_path, fields={"attrib.fps"}
-    ) or {}
-    fps = folder_entity.get("attrib", {}).get("fps")
+    task_entity = get_current_task_entity(fields={"attrib"})
+    fps = task_entity.get("attrib", {}).get("fps")
     if not fps:
-        project_entity = ayon_api.get_project(
-            project_name, fields=["attrib.fps"]
+        project_name = get_current_project_name()
+        folder_path = get_current_folder_path()
+        folder_entity = ayon_api.get_folder_by_path(
+            project_name, folder_path, fields={"attrib.fps"}
         ) or {}
-        fps = project_entity.get("attrib", {}).get("fps")
 
+        fps = folder_entity.get("attrib", {}).get("fps")
         if not fps:
-            fps = 25
+            project_entity = ayon_api.get_project(
+                project_name, fields=["attrib.fps"]
+            ) or {}
+            fps = project_entity.get("attrib", {}).get("fps")
+
+            if not fps:
+                fps = 25
 
     return convert_to_maya_fps(fps)
 
@@ -4415,252 +4223,21 @@ def create_rig_animation_instance(
         )
 
 
-class Reorder(object):
-    """Helper functions for reordering in Maya outliner"""
+def get_node_index_under_parent(node: str) -> int:
+    """Return the index of a DAG node under its parent.
 
-    @staticmethod
-    def group_by_parent(nodes):
-        """Groups the given input list of nodes by parent.
+    Arguments:
+        node (str): A DAG Node path.
 
-        This is a convenience function for the Reorder functionality.
-        This function assumes the nodes are in the `long/fullPath` format.
-        """
-        nodes = cmds.ls(nodes, long=True)
-        nodes_by_parent = defaultdict(list)
-        for node in nodes:
-            parent = node.rsplit("|", 1)[0]
-            nodes_by_parent[parent].append(node)
-        return nodes_by_parent
+    Returns:
+        int: The DAG node's index under its parents or world
 
-    @staticmethod
-    def get_children_with_index(parent):
-        """Get children under parent with their indices"""
-        def node_to_index(nodes):
-            return {node: index for index, node in enumerate(nodes)}
-
-        if not parent:
-            return node_to_index(cmds.ls(assemblies=True, long=True))
-        else:
-            return node_to_index(
-                cmds.listRelatives(parent,
-                                   children=True,
-                                   fullPath=True) or []
-            )
-
-    @staticmethod
-    def get_index(node):
-        node = cmds.ls(node, long=True)[0]  # enforce long names
-        parent = node.rsplit("|", 1)[0]
-        if not parent:
-            return cmds.ls(assemblies=True, long=True).index(node)
-        else:
-            return cmds.listRelatives(parent,
-                                      children=True,
-                                      fullPath=True).index(node)
-
-    @staticmethod
-    def get_indices(nodes):
-        """Returns a dictionary with node, index pairs.
-
-        This is preferred over get_index method for larger number of nodes,
-        because it is more optimal in performance.
-
-        eg:
-            {
-                '|side': 3,
-                '|top': 1,
-                '|pSphere1': 4,
-                '|persp': 0,
-                '|front': 2
-            }
-
-        Returns:
-            dict: index by node
-        """
-        nodes = cmds.ls(nodes, long=True)  # enforce long names
-        node_indices = dict()
-        cached_children = dict()
-        for node in nodes:
-            parent = node.rsplit("|", 1)[0]
-            if parent not in cached_children:
-                cached_children[parent] = Reorder.get_children_with_index(parent)  # noqa: E501
-
-            node_indices[node] = cached_children[parent][node]
-        return node_indices
-
-    @staticmethod
-    def set_index(node, index):
-        if not node:
-            return
-        cmds.reorder(node, front=True)
-        cmds.reorder(node, r=index)
-
-    @staticmethod
-    def set_indices(node_indices):
-        """Set node order by node to index dict.
-
-        Args:
-            node_indices (dict): Node name to index dictionary
-
-        """
-        if not isinstance(node_indices, dict):
-            raise TypeError(
-                "Reorder.set_indices() requires a dictionary with "
-                "(node, index) pairs as input. "
-                "`{0}` is an invalid input type.".format(
-                    type(node_indices).__name__)
-            )
-
-        if not node_indices:
-            return
-
-        # force nodes to the back to not influence each other during reorder
-        cmds.reorder(node_indices.keys(), back=True)
-
-        for node, index in sorted(node_indices.items(),
-                                  key=operator.itemgetter(1)):
-            Reorder.set_index(node, index)
-
-    @staticmethod
-    def sort(nodes, key=lambda x: x.rsplit("|", 1)[-1], reverse=False):
-        """Sorts the node in scene by the key function.
-
-        Default sorting key is alphabetically by using the object's short name.
-        """
-        nodes = cmds.ls(nodes, long=True)  # ensure long paths
-        if not nodes:
-            return
-
-        # Group by parent to sort nodes per parent
-        parents = Reorder.group_by_parent(nodes)
-
-        for child_nodes in parents.values():
-
-            node_indices = Reorder.get_indices(child_nodes)
-            indices = sorted(node_indices.values())
-
-            new_indices = {
-                node: indices[i] for i, node in
-                enumerate(sorted(child_nodes, key=key, reverse=reverse))
-            }
-            Reorder.set_indices(new_indices)
-
-    @staticmethod
-    def reverse(nodes):
-        nodes = cmds.ls(nodes, long=True)  # ensure long paths
-        if not nodes:
-            return
-
-        # Group by parent to sort nodes per parent
-        parents = Reorder.group_by_parent(nodes)
-
-        for child_nodes in parents.values():
-
-            node_indices = Reorder.get_indices(child_nodes)
-            indices = sorted(node_indices.values(), reverse=False)
-
-            iterable = enumerate(sorted(node_indices.items(),
-                                        key=operator.itemgetter(1),
-                                        reverse=True))
-            new_indices = {
-                node: indices[i] for i, (node, _old_index) in iterable
-            }
-            Reorder.set_indices(new_indices)
-
-    @staticmethod
-    def align_bottom(nodes):
-        """Reorder to the lowest (most back) of node in `nodes`."""
-        nodes = cmds.ls(nodes, long=True)  # ensure long paths
-        if not nodes:
-            return
-
-        # Group by parent to sort nodes per parent
-        parents = Reorder.group_by_parent(nodes)
-        for child_nodes in parents.values():
-
-            # Reorder.set_index forces to front and then moves all objects
-            # together (so they will be stacked together). Then it applies the
-            # index as relative offset, we can use that here to our advantage.
-            # And it is a lot faster than Reorder.set_indices in that scenario.
-            index_per_node = Reorder.get_indices(child_nodes)
-            back_index = max(index_per_node.values())
-            new_front_index = back_index - len(child_nodes) + 1
-            Reorder.set_index(child_nodes, new_front_index)
-
-    @staticmethod
-    def align_top(nodes):
-        """Reorder to the highest (most front) of node in `nodes`."""
-        nodes = cmds.ls(nodes, long=True)  # ensure long paths
-        if not nodes:
-            return
-
-        # Group by parent to sort nodes per parent
-        parents = Reorder.group_by_parent(nodes)
-        for childNodes in parents.values():
-
-            # Reorder.set_index forces to front and then moves all objects
-            # together (so they will be stacked together). Then it applies the
-            # index as relative offset, we can use that here to our advantage.
-            # And it is a lot faster than Reorder.set_indices in that scenario.
-            index_per_node = Reorder.get_indices(childNodes)
-            front_index = min(index_per_node.values())
-            Reorder.set_index(childNodes, front_index)
-
-    @staticmethod
-    def move(nodes, relative, wrap=True):
-        """ Reorder by the given relative amount. """
-        # TODO: Implement the disabling of wrapping around when at bottom.
-        if not nodes:
-            return
-        cmds.reorder(nodes, r=relative)
-
-    @staticmethod
-    def to_bottom(nodes):
-        """Reorder to all the way to the bottom."""
-        if not nodes:
-            return
-        cmds.reorder(nodes, back=True)
-
-    @staticmethod
-    def to_top(nodes):
-        """Reorder to all the way to the top."""
-        if not nodes:
-            return
-        cmds.reorder(nodes, front=True)
-
-    @staticmethod
-    def order_to(nodes):
-        """Reorder the nodes to the order of the input list.
-
-        Tip:
-            If you pass this your current selection list it will reorder
-            the nodes to the order of your selection.
-
-        """
-        nodes = cmds.ls(nodes, long=True)  # ensure long paths
-        if not nodes:
-            return
-
-        # Make a dictionary of the input order so we can optimize the look-up
-        # of the index in the order of the input `nodes`.
-        selected_order = {node: i for i, node in enumerate(nodes)}
-
-        # Group by parent since we want to sort nodes under its current parent
-        parents = Reorder.group_by_parent(nodes)
-        for child_nodes in parents.values():
-
-            # Get the current indices
-            node_indices = Reorder.get_indices(child_nodes)
-
-            # We get the original indices so we can position to those same
-            # positions, albeit with the new ordering of the nodes.
-            orig_indices = sorted(node_indices.values())
-
-            # Order the nodes by current selection (input list) and then apply
-            # the list of indices from `nodeIndices` in low-to-high order.
-            new_indices = dict(
-                zip(sorted(node_indices.keys(),
-                           key=lambda x: selected_order[x]),
-                    orig_indices)
-            )
-            Reorder.set_indices(new_indices)
+    """
+    node = cmds.ls(node, long=True)[0]  # enforce long names
+    parent = node.rsplit("|", 1)[0]
+    if not parent:
+        return cmds.ls(assemblies=True, long=True).index(node)
+    else:
+        return cmds.listRelatives(parent,
+                                  children=True,
+                                  fullPath=True).index(node)

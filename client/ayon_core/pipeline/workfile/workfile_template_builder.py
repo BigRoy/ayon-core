@@ -34,16 +34,23 @@ from ayon_core.lib import (
     Logger,
     StringTemplate,
     filter_profiles,
+    filter_profiles,
     attribute_definitions,
 )
-from ayon_core.pipeline.plugin_discover import discover
-from ayon_core.lib.events import EventSystem
+from ayon_core.lib.events import EventSystem, EventCallback, Event
 from ayon_core.lib.attribute_definitions import get_attributes_keys
 from ayon_core.pipeline import Anatomy
 from ayon_core.pipeline.load import (
     get_loaders_by_name,
     get_representation_contexts,
     load_with_repre_context,
+)
+from ayon_core.pipeline.plugin_discover import (
+    discover,
+    register_plugin,
+    register_plugin_path,
+    deregister_plugin,
+    deregister_plugin_path
 )
 
 from ayon_core.pipeline.create import (
@@ -219,7 +226,7 @@ class AbstractTemplateBuilder(object):
 
         # Backwards compatibility
         if hasattr(self._host, "get_workfile_build_placeholder_plugins"):
-            plugins = self._host.get_workfile_build_placeholder_plugins()
+            return self._host.get_workfile_build_placeholder_plugins()
 
         plugins.extend(discover(PlaceholderPlugin))
         return plugins
@@ -251,15 +258,6 @@ class AbstractTemplateBuilder(object):
         if self._log is None:
             self._log = Logger.get_logger(repr(self))
         return self._log
-
-    @property
-    def event_system(self):
-        """Event System of the Workfile templatee builder.
-
-        Returns:
-            EventSystem: The event system.
-        """
-        return self._event_system
 
     def refresh(self):
         """Reset cached data."""
@@ -754,7 +752,7 @@ class AbstractTemplateBuilder(object):
                 placeholder.set_finished()
 
             # Trigger on_depth_processed event
-            self.event_system.emit(
+            self.emit_event(
                 topic="template.depth_processed",
                 data={
                     "depth": iter_counter,
@@ -782,7 +780,7 @@ class AbstractTemplateBuilder(object):
                 placeholders.append(placeholder)
 
         # Trigger on_finished event
-        self.event_system.emit(
+        self.emit_event(
             topic="template.finished",
             data={
                 "depth": iter_counter,
@@ -917,6 +915,30 @@ class AbstractTemplateBuilder(object):
             "keep_placeholder": keep_placeholder,
             "create_first_version": create_first_version
         }
+
+    def emit_event(self, topic, data=None, source=None) -> Event:
+        return self._event_system.emit(topic, data, source)
+
+    def add_event_callback(self, topic, callback, order=None):
+        return self._event_system.add_callback(topic, callback, order=order)
+
+    def add_on_finished_callback(
+        self, callback, order=None
+    ) -> EventCallback:
+        return self.add_event_callback(
+            topic="template.finished",
+            callback=callback,
+            order=order
+        )
+
+    def add_on_depth_processed_callback(
+        self, callback, order=None
+    ) -> EventCallback:
+        return self.add_event_callback(
+            topic="template.depth_processed",
+            callback=callback,
+            order=order
+        )
 
 
 @six.add_metaclass(ABCMeta)
@@ -1147,40 +1169,6 @@ class PlaceholderPlugin(object):
             plugin_data = {}
         plugin_data[key] = value
         self.builder.set_shared_populate_data(self.identifier, plugin_data)
-
-    def register_on_finished_callback(
-            self, placeholder, callback, order=None
-    ):
-        self.register_callback(
-            placeholder,
-            topic="template.finished",
-            callback=callback,
-            order=order
-        )
-
-    def register_on_depth_processed_callback(
-            self, placeholder, callback, order=0
-    ):
-        self.register_callback(
-            placeholder,
-            topic="template.depth_processed",
-            callback=callback,
-            order=order
-        )
-
-    def register_callback(self, placeholder, topic, callback, order=None):
-
-        if order is None:
-            # Match placeholder order by default
-            order = placeholder.order
-
-        # We must persist the callback over time otherwise it will be removed
-        # by the event system as a valid function reference. We do that here
-        # always just so it's easier to develop plugins where callbacks might
-        # be partials or lambdas
-        placeholder.data.setdefault("callbacks", []).append(callback)
-        self.log.debug("Registering '%s' callback: %s", topic, callback)
-        self.builder.event_system.add_callback(topic, callback, order=order)
 
 
 class PlaceholderItem(object):
@@ -1984,3 +1972,23 @@ class CreatePlaceholderItem(PlaceholderItem):
 
     def create_failed(self, creator_data):
         self._failed_created_publish_instances.append(creator_data)
+
+
+def discover_workfile_build_plugins(*args, **kwargs):
+    return discover(PlaceholderPlugin, *args, **kwargs)
+
+
+def register_workfile_build_plugin(plugin: PlaceholderPlugin):
+    register_plugin(PlaceholderPlugin, plugin)
+
+
+def deregister_workfile_build_plugin(plugin: PlaceholderPlugin):
+    deregister_plugin(PlaceholderPlugin, plugin)
+
+
+def register_workfile_build_plugin_path(path: str):
+    register_plugin_path(PlaceholderPlugin, path)
+
+
+def deregister_workfile_build_plugin_path(path: str):
+    deregister_plugin_path(PlaceholderPlugin, path)
