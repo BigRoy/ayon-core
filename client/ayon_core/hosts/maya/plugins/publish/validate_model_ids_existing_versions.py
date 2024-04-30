@@ -4,6 +4,7 @@ import logging
 
 import six
 
+from maya import cmds
 import alembic.Abc
 
 import pyblish.api
@@ -225,8 +226,9 @@ class ValidateModelIdsToExistingVersion(pyblish.api.InstancePlugin,
         }
 
         # Get instance node by the abc equivalent path
+        # We consider only `dagNode` types to avoid matching against e.g. sets
         instance_nodes_id_by_abc_path = dict()
-        for node in instance:
+        for node in cmds.ls(instance, type="dagNode", long=True):
 
             # Consider only nodes with ids
             node_id = get_id(node)
