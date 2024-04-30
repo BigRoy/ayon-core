@@ -125,13 +125,16 @@ def get_instance_uri_path(
 
 
 def get_last_publish(instance, representation="usd"):
-    return get_representation_path_by_names(
+    path = get_representation_path_by_names(
         project_name=instance.context.data["projectName"],
         folder_path=instance.data["folderPath"],
         product_name=instance.data["productName"],
         version_name="latest",
         representation_name=representation
     )
+    # TODO: Potentially force download the publish if site-sync is enabled
+    if path and os.path.exists(path):
+        return path
 
 
 def add_representation(instance, name,
