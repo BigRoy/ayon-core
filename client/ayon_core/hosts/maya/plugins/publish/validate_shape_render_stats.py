@@ -45,7 +45,7 @@ class ValidateShapeRenderStats(pyblish.api.InstancePlugin,
                     if value != default_value:
                         invalid.add(shape)
 
-        return invalid
+        return list(invalid)
 
     def process(self, instance):
         if not self.is_active(instance.data):
