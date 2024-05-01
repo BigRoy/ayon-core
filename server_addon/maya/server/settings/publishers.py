@@ -1656,7 +1656,7 @@ DEFAULT_PUBLISH_SETTINGS = {
         "renderableOnly": False,
         "stripNamespaces": True,
         "uvsOnly": False,
-        "uvWrite": False,
+        "uvWrite": True,
         "userAttr": "",
         "userAttrPrefix": "",
         "verbose": False,
