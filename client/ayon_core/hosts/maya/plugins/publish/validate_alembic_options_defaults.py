@@ -29,20 +29,13 @@ class ValidateAlembicDefaultsPointcache(
 
     @classmethod
     def _get_publish_attributes(cls, instance):
-        attributes = instance.data["publish_attributes"][
-            cls.plugin_name(
-                instance.data["publish_attributes"]
-            )
-        ]
-
-        return attributes
+        return instance.data["publish_attributes"][cls.plugin_name]
 
     def process(self, instance):
         if not self.is_active(instance.data):
             return
 
         settings = self._get_settings(instance.context)
-
         attributes = self._get_publish_attributes(instance)
 
         msg = (
@@ -75,13 +68,11 @@ class ValidateAlembicDefaultsPointcache(
         )
 
         # Set the settings values on the create context then save to workfile.
-        publish_attributes = instance.data["publish_attributes"]
-        plugin_name = cls.plugin_name(publish_attributes)
         attributes = cls._get_publish_attributes(instance)
         settings = cls._get_settings(instance.context)
         create_publish_attributes = create_instance.data["publish_attributes"]
         for key in attributes:
-            create_publish_attributes[plugin_name][key] = settings[key]
+            create_publish_attributes[cls.plugin_name][key] = settings[key]
 
         create_context.save_changes()
 
@@ -93,6 +84,6 @@ class ValidateAlembicDefaultsAnimation(
 
     The defaults are defined in the project settings.
     """
-    label = "Validate Alembic Options   Defaults"
+    label = "Validate Alembic Options Defaults"
     families = ["animation"]
     plugin_name = "ExtractAnimation"
