@@ -337,8 +337,9 @@ class ProcessSubmittedJobOnFarm(pyblish.api.InstancePlugin,
 
         url = "{}/api/jobs".format(self.deadline_url)
         auth = instance.data["deadline"]["auth"]
-        response = requests_post(url, json=payload, timeout=10,
-                                 auth=auth)
+        verify = instance.data["deadline"]["verify"]
+        response = requests_post(
+            url, json=payload, timeout=10, auth=auth, verify=verify)
         if not response.ok:
             raise Exception(response.text)
 
@@ -500,8 +501,6 @@ class ProcessSubmittedJobOnFarm(pyblish.api.InstancePlugin,
 
         # Inject deadline url to instances to query DL for job id for overrides
         for inst in instances:
-            if not "deadline" in inst:
-                inst["deadline"] = {}
             inst["deadline"] = instance.data["deadline"]
 
         # publish job file
