@@ -7,10 +7,8 @@ from ayon_core.lib import (
     BoolDef
 )
 from ayon_core.lib.events import weakref_partial
-from ayon_core.hosts.maya.api.workfile_template_builder import (
-    MayaPlaceholderPlugin,
-)
-from ayon_core.hosts.maya.api.lib import (
+from ayon_maya.api.workfile_template_builder import MayaPlaceholderPlugin
+from ayon_maya.api.lib import (
     get_all_children,
     assign_look,
 )
@@ -60,7 +58,10 @@ class AssignLookPlaceholderPlugin(MayaPlaceholderPlugin):
                 "recurse",
                 label="Recursive",
                 tooltip="Assign look also to potential sub containers / "
-                        "placeholders loaded from the load placeholder.",
+                        "placeholders loaded from the load placeholder.\n"
+                        "This will make sure that any placeholder contained "
+                        "that itself loaded new geometry will recursively "
+                        "also get the look assignment triggered.",
                 default=options.get("recurse", False)
             ),
         ]
