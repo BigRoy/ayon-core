@@ -8,7 +8,7 @@ from ayon_core.pipeline.publish import (
     PublishValidationError
 )
 
-from ayon_core.hosts.maya.api.lib_rendersetup import get_attr_in_layer
+from ayon_maya.api.lib_rendersetup import get_attr_in_layer
 
 
 class ValidateRenderArnoldAutoTx(pyblish.api.InstancePlugin):

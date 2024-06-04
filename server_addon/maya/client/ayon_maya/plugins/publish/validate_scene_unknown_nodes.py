@@ -1,7 +1,7 @@
 from maya import cmds
 
 import pyblish.api
-from ayon_core.hosts.maya.api.action import SelectInvalidAction
+from ayon_maya.api.action import SelectInvalidAction
 from ayon_core.pipeline.publish import (
     ValidateContentsOrder,
     RepairContextAction,

@@ -2,7 +2,7 @@ from functools import partial
 
 from maya import cmds
 
-from ayon_core.hosts.maya.api.workfile_template_builder import (
+from ayon_maya.api.workfile_template_builder import (
     MayaPlaceholderPlugin
 )
 from ayon_core.lib import NumberDef, TextDef, EnumDef

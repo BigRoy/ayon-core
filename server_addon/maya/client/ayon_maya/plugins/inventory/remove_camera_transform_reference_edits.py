@@ -1,6 +1,6 @@
 from maya import cmds
-from ayon_core.hosts.maya.api.lib import pairwise
-from ayon_core.hosts.maya.api.plugin import get_reference_node
+from ayon_maya.api.lib import pairwise
+from ayon_maya.api.plugin import get_reference_node
 
 from ayon_core.pipeline import InventoryAction
 

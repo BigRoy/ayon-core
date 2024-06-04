@@ -3,8 +3,8 @@ from collections import defaultdict
 
 import pyblish.api
 
-from ayon_core.hosts.maya.api import lib
-import ayon_core.hosts.maya.api.action
+from ayon_maya.api import lib
+import ayon_maya.api.action
 from ayon_core.pipeline.publish import (
     PublishValidationError,
     OptionalPyblishPluginMixin
@@ -61,8 +61,8 @@ class ValidateNodeIdsUniqueInstanceClash(pyblish.api.InstancePlugin,
     families = ["model"]
     optional = True
 
-    actions = [ayon_core.hosts.maya.api.action.SelectInvalidAction,
-               ayon_core.hosts.maya.api.action.GenerateUUIDsOnInvalidAction]
+    actions = [ayon_maya.api.action.SelectInvalidAction,
+               ayon_maya.api.action.GenerateUUIDsOnInvalidAction]
 
     @classmethod
     def apply_settings(cls, project_settings):

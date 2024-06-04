@@ -1,5 +1,5 @@
 from ayon_core.pipeline import InventoryAction
-from ayon_core.hosts.maya.tools.mayalookassigner.commands import (
+from ayon_maya.tools.mayalookassigner.commands import (
     remove_unused_looks
 )
 

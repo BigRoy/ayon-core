@@ -8,10 +8,10 @@ from ayon_core.lib import (
     TextDef,
     BoolDef
 )
-from ayon_core.hosts.maya.api.workfile_template_builder import (
+from ayon_maya.api.workfile_template_builder import (
     MayaPlaceholderPlugin,
 )
-from ayon_core.hosts.maya.api.lib import (
+from ayon_maya.api.lib import (
     get_all_children,
     assign_look,
 )

@@ -1,7 +1,7 @@
 import pyblish.api
 from maya import cmds
 
-import ayon_core.hosts.maya.api.action
+import ayon_maya.api.action
 from ayon_core.pipeline.publish import ValidateContentsOrder
 
 
@@ -21,7 +21,7 @@ class ValidateLookViewportSubdivs(pyblish.api.InstancePlugin):
     families = ['look']
     hosts = ['maya']
     label = 'Look Single Shader Per Shape'
-    actions = [ayon_core.hosts.maya.api.action.SelectInvalidAction]
+    actions = [ayon_maya.api.action.SelectInvalidAction]
 
     # The default connections to check
     def process(self, instance):

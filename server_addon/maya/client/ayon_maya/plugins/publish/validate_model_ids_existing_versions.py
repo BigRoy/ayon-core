@@ -20,8 +20,8 @@ from ayon_core.pipeline.publish import (
     ValidateContentsOrder
 )
 
-import ayon_core.hosts.maya.api.action
-from ayon_core.hosts.maya.api.lib import get_id, set_id
+import ayon_maya.api.action
+from ayon_maya.api.lib import get_id, set_id
 
 
 log = logging.getLogger(__name__)
@@ -127,7 +127,7 @@ class ValidateModelIdsToExistingVersion(pyblish.api.InstancePlugin,
     hosts = ["maya"]
     families = ["model"]
     label = "Model ids match latest version"
-    actions = [ayon_core.hosts.maya.api.action.SelectInvalidAction,
+    actions = [ayon_maya.api.action.SelectInvalidAction,
                RepairAction]
 
     optional = True
