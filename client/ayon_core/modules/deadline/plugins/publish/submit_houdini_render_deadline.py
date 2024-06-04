@@ -71,6 +71,7 @@ class HuskStandalonePluginInfo():
     PostFrame = attr.ib(default="")
     PostRender = attr.ib(default="")
     RestartDelegate = attr.ib(default="")
+    Version = attr.ib(default="")
 
 
 class HoudiniSubmitDeadline(
@@ -170,16 +171,14 @@ class HoudiniSubmitDeadline(
 
         job_type = "[RENDER]"
         if split_render_job and not is_export_job:
-            # Convert from family to Deadline plugin name
-            # i.e., arnold_rop -> Arnold
-            family = instance.data["family"]
+            product_type = instance.data["productType"]
             plugin = {
                 "usdrender": "HuskStandalone",
-            }.get(family)
+            }.get(product_type)
             if not plugin:
-                # Convert from family to Deadline plugin name
+                # Convert from product type to Deadline plugin name
                 # i.e., arnold_rop -> Arnold
-                plugin = family.replace("_rop", "").capitalize()
+                plugin = product_type.replace("_rop", "").capitalize()
         else:
             plugin = "Houdini"
             if split_render_job:
@@ -327,7 +326,8 @@ class HoudiniSubmitDeadline(
                     ))
 
             elif product_type == "usdrender":
-                plugin_info = self._get_husk_standalone_plugin_info(instance)
+                plugin_info = self._get_husk_standalone_plugin_info(
+                    instance, hou_major_minor)
 
             else:
                 self.log.error(
@@ -359,7 +359,7 @@ class HoudiniSubmitDeadline(
         output_dir = os.path.dirname(instance.data["files"][0])
         instance.data["outputDir"] = output_dir
 
-    def _get_husk_standalone_plugin_info(self, instance):
+    def _get_husk_standalone_plugin_info(self, instance, hou_major_minor):
         # Not all hosts can import this module.
         import hou
 
@@ -389,7 +389,8 @@ class HoudiniSubmitDeadline(
             PreFrame=rop_node.evalParm("husk_preframe"),
             PostFrame=rop_node.evalParm("husk_postframe"),
             PostRender=rop_node.evalParm("husk_postrender"),
-            RestartDelegate=restart_delegate
+            RestartDelegate=restart_delegate,
+            Version=hou_major_minor
         )
 
 
