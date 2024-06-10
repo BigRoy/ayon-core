@@ -1,5 +1,5 @@
 import os
-from ayon_core.lib import PreLaunchHook
+from ayon_applications import PreLaunchHook
 
 
 def add_path_to_env(env, key, path):
