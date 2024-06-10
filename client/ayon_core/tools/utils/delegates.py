@@ -202,7 +202,13 @@ class StatusDelegate(QtWidgets.QStyledItemDelegate):
         )
 
         if option.state & QtWidgets.QStyle.State_HasFocus:
-            focus_opt = QtWidgets.QStyleOptionFocusRect(option)
+            focus_opt = QtWidgets.QStyleOptionFocusRect()
+            focus_opt.state = option.state
+            focus_opt.direction = option.direction
+            focus_opt.rect = option.rect
+            focus_opt.fontMetrics = option.fontMetrics
+            focus_opt.palette = option.palette
+
             focus_opt.rect = style.subElementRect(
                 QtWidgets.QCommonStyle.SE_ItemViewItemFocusRect,
                 option,
@@ -214,14 +220,14 @@ class StatusDelegate(QtWidgets.QStyledItemDelegate):
             )
             focus_opt.backgroundColor = option.palette.color(
                 (
-                    QtWidgets.QPalette.Normal
+                    QtGui.QPalette.Normal
                     if option.state & QtWidgets.QStyle.State_Enabled
-                    else QtWidgets.QPalette.Disabled
+                    else QtGui.QPalette.Disabled
                 ),
                 (
-                    QtWidgets.QPalette.Highlight
+                    QtGui.QPalette.Highlight
                     if option.state & QtWidgets.QStyle.State_Selected
-                    else QtWidgets.QPalette.Window
+                    else QtGui.QPalette.Window
                 )
             )
             style.drawPrimitive(
