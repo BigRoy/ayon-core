@@ -4,7 +4,7 @@ from ayon_core.pipeline.workfile.workfile_template_builder import (
     LoadPlaceholderItem,
     PlaceholderLoadMixin,
 )
-from ayon_core.hosts.nuke.api.lib import (
+from ayon_nuke.api.lib import (
     find_free_space_to_paste_nodes,
     get_extreme_positions,
     get_group_io_nodes,
@@ -18,7 +18,7 @@ from ayon_core.hosts.nuke.api.lib import (
     duplicate_node,
     node_tempfile,
 )
-from ayon_core.hosts.nuke.api.workfile_template_builder import (
+from ayon_nuke.api.workfile_template_builder import (
     NukePlaceholderPlugin
 )
 
