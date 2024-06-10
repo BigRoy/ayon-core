@@ -2,7 +2,7 @@ import pyblish.api
 
 from ayon_core.pipeline import OpenPypePyblishPluginMixin
 from ayon_core.lib import EnumDef
-from ayon_core.modules.deadline.deadline_module import DeadlineModule
+from ayon_deadline import DeadlineAddon
 
 
 class CollectDeadlineMachineList(pyblish.api.InstancePlugin,
@@ -36,7 +36,7 @@ class CollectDeadlineMachineList(pyblish.api.InstancePlugin,
         deadline_url = next(iter(
             project_settings["deadline"]["deadline_urls"]
         ))["value"]
-        cls.slaves = DeadlineModule.get_deadline_slaves_cached(
+        cls.slaves = DeadlineAddon.get_deadline_slaves_cached(
             deadline_url, log=cls.log
         )
 

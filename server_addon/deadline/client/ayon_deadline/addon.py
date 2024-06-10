@@ -87,8 +87,8 @@ class DeadlineAddon(AYONAddon, IPluginPaths):
     def get_deadline_pools_cached(cls, webservice, log=None):
         cache = cls._cache.setdefault(webservice, {})
         if "pools" not in cache:
-            cache["pools"] = DeadlineModule.get_deadline_pools(webservice,
-                                                               log=log)
+            cache["pools"] = DeadlineAddon.get_deadline_pools(webservice,
+                                                              log=log)
         return copy.deepcopy(cache["pools"])
 
     @staticmethod
@@ -129,6 +129,6 @@ class DeadlineAddon(AYONAddon, IPluginPaths):
     def get_deadline_slaves_cached(cls, webservice, log=None):
         cache = cls._cache.setdefault(webservice, {})
         if "slaves" not in cache:
-            cache["slaves"] = DeadlineModule.get_deadline_slaves(webservice,
-                                                                 log=log)
+            cache["slaves"] = DeadlineAddon.get_deadline_slaves(webservice,
+                                                                log=log)
         return copy.deepcopy(cache["slaves"])

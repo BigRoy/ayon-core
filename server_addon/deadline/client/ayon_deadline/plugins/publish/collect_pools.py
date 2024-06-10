@@ -71,7 +71,7 @@ class CollectDeadlinePools(pyblish.api.InstancePlugin,
         deadline_url = next(iter(
             project_settings["deadline"]["deadline_urls"]
         ))["value"]
-        cls.available_pools = DeadlineModule.get_deadline_pools_cached(
+        cls.available_pools = DeadlineAddon.get_deadline_pools_cached(
             deadline_url, log=cls.log
         )
 
