@@ -18,10 +18,16 @@ from ayon_core.pipeline.load import (
     get_representation_context,
     get_representation_path_from_context
 )
-from ayon_core.pipeline.context_tools import get_current_project_name
+from ayon_core.pipeline.context_tools import (
+    get_current_project_name,
+    get_current_folder_path
+)
+from ayon_core.tools.utils import SimpleFoldersWidget
+from ayon_core.style import load_stylesheet
 
 from ayon_houdini.api import lib
 
+from qtpy import QtWidgets
 import hou
 
 
@@ -418,3 +424,75 @@ def keep_background_images_linked(node, old_name):
 
     if changes:
         set_background_images(parent, images)
+
+
+def select_folder_path(node):
+    """Show dialog to select folder path.
+
+    When triggered it opens a dialog that shows the available
+    folder paths within a given project.
+
+    Note:
+        This function should be refactored.
+        It currently shows the available
+          folder paths within the current project only.
+
+    Args:
+        node (hou.OpNode): The HDA node.
+    """
+    main_window = lib.get_main_window()
+
+    project_name = node.evalParm("project_name")
+    folder_path = node.evalParm("folder_path")
+
+    class PickDialog(QtWidgets.QDialog):
+        def __init__(self, parent=None):
+            super(PickDialog, self).__init__(parent)
+            # TODO: Add pick project field
+            self.setWindowTitle("Select folder..")
+
+            filter_widget = QtWidgets.QLineEdit()
+            filter_widget.setPlaceholderText("Filter folders..")
+            folder_widget = SimpleFoldersWidget(parent=self)
+            accept_button = QtWidgets.QPushButton("Accept")
+
+            layout = QtWidgets.QVBoxLayout(self)
+            layout.addWidget(filter_widget)
+            layout.addWidget(folder_widget)
+            layout.addWidget(accept_button)
+
+            filter_widget.textChanged.connect(folder_widget.set_name_filter)
+
+            folder_widget.double_clicked.connect(self.on_confirm)
+            accept_button.clicked.connect(self.on_confirm)
+
+            self.folder_widget = folder_widget
+
+        def get_selected_folder_path(self):
+            return self.folder_widget.get_selected_folder_path()
+
+        def on_confirm(self):
+            self.close()
+
+    # Note: The following dialog doesn't support changing `the project_name`
+    #         But, having a semi-functional dialog is better than nothing.
+    dialog = PickDialog(parent=main_window)
+    dialog.folder_widget.set_project_name(project_name)
+    if folder_path:
+        # TODO: This does not work because project is refreshed in a thread
+        #       and thus the setting of folder path occurs before the project
+        #       refresh
+        dialog.folder_widget.set_selected_folder_path(folder_path)
+    dialog.setStyleSheet(load_stylesheet())
+    dialog.exec_()
+
+    selected_folder_path = dialog.get_selected_folder_path()
+
+    if not selected_folder_path:
+        # Do nothing if user picked nothing
+        return
+
+    if selected_folder_path == get_current_folder_path():
+        selected_folder_path = '$AYON_FOLDER_PATH'
+
+    node.parm("folder_path").set(selected_folder_path)
