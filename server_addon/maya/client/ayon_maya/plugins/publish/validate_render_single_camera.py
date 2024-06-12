@@ -51,7 +51,7 @@ class ValidateRenderSingleCamera(plugin.MayaInstancePlugin,
 
         file_prefix = cmds.getAttr(
             RenderSettings.get_image_prefix_attr(renderer)
-        )
+        ) or ""  # fallback to empty string because Maya may return `None`
 
         renderlayer = instance.data["renderlayer"]
         if len(cameras) > 1:
