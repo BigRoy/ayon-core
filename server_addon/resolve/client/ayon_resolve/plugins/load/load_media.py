@@ -1,17 +1,19 @@
 import json
-import copy
 import contextlib
+from pathlib import Path
 from collections import defaultdict
-from typing import Union, List, Optional, TypedDict
+from typing import Union, List, Optional, TypedDict, Tuple
 
 from ayon_api import version_is_latest
 from ayon_core.lib import StringTemplate
 from ayon_core.pipeline.colorspace import get_remapped_colorspace_to_native
 from ayon_core.pipeline import (
+    Anatomy,
     LoaderPlugin,
     get_representation_path,
     registered_host
 )
+from ayon_core.pipeline.load import get_representation_path_with_anatomy
 from ayon_core.lib.transcoding import (
     VIDEO_EXTENSIONS,
     IMAGE_EXTENSIONS
@@ -19,6 +21,9 @@ from ayon_core.lib.transcoding import (
 from ayon_core.lib import BoolDef
 from ayon_resolve.api import lib
 from ayon_resolve.api.pipeline import AVALON_CONTAINER_ID
+
+
+FRAME_SPLITTER = "__frame_splitter__"
 
 
 class MetadataEntry(TypedDict):
@@ -188,6 +193,7 @@ class LoadMedia(LoaderPlugin):
             self.timeline = lib.get_current_timeline()
 
         representation = context["representation"]
+        self._project_name = context["project"]["name"]
 
         project = lib.get_current_project()
         media_pool = project.GetMediaPool()
@@ -208,39 +214,7 @@ class LoadMedia(LoaderPlugin):
                 item = container["_item"]
 
         if item is None:
-            # Create or set the bin folder, we add it in there
-            # If bin path is not set we just add into the current active bin
-            if self.media_pool_bin_path:
-                media_pool_bin_path = StringTemplate(
-                    self.media_pool_bin_path).format_strict(context)
-                folder = lib.create_bin(
-                    name=media_pool_bin_path,
-                    root=media_pool.GetRootFolder(),
-                    set_as_current=False
-                )
-                media_pool.SetCurrentFolder(folder)
-
-            # Import media
-            path = self._get_filepath(context)
-            items = media_pool.ImportMedia([path])
-
-            assert len(items) == 1, "Must import only one media item"
-            item = items[0]
-
-            self._set_metadata(item, context)
-            self._set_colorspace_from_representation(item, representation)
-
-            data = self._get_container_data(context)
-
-            # Add containerise data only needed on first load
-            data.update({
-                "schema": "openpype:container-2.0",
-                "id": AVALON_CONTAINER_ID,
-                "loader": str(self.__class__.__name__),
-            })
-
-            item.SetMetadata(lib.pype_tag_name, json.dumps(data))
-
+            item = self._import_media_to_bin(context, media_pool, representation)
         # Always update clip color - even if re-using existing clip
         color = self.get_item_color(context)
         item.SetClipColor(color)
@@ -253,6 +227,65 @@ class LoadMedia(LoaderPlugin):
                     media_pool_item=item,
                     timeline=timeline
                 )
+
+    def _import_media_to_bin(
+        self, context, media_pool, representation
+    ):
+        """Import media to Resolve Media Pool.
+
+        Also create a bin if `media_pool_bin_path` is set.
+
+        Args:
+            context (dict): The context dictionary.
+            media_pool (resolve.MediaPool): The Resolve Media Pool.
+            representation (dict): The representation data.
+
+        Returns:
+            resolve.MediaPoolItem: The imported media pool item.
+        """
+        # Create or set the bin folder, we add it in there
+        # If bin path is not set we just add into the current active bin
+        if self.media_pool_bin_path:
+            media_pool_bin_path = StringTemplate(
+                self.media_pool_bin_path).format_strict(context)
+
+            folder = lib.create_bin(
+                # double slashes will create unconnected folders
+                name=media_pool_bin_path.replace("//", "/"),
+                root=media_pool.GetRootFolder(),
+                set_as_current=False
+            )
+            media_pool.SetCurrentFolder(folder)
+
+        # Import media
+        # Resolve API: ImportMedia function requires a list of dictionaries
+        # with keys "FilePath", "StartIndex" and "EndIndex" for sequences
+        # but only string with absolute path for single files.
+        is_sequence, file_info = self._get_file_info(context)
+        items = (
+            media_pool.ImportMedia([file_info])
+            if is_sequence
+            else media_pool.ImportMedia([file_info["FilePath"]])
+        )
+        assert len(items) == 1, "Must import only one media item"
+
+        result = items[0]
+
+        self._set_metadata(result, context)
+        self._set_colorspace_from_representation(result, representation)
+
+        data = self._get_container_data(context)
+
+        # Add containerise data only needed on first load
+        data.update({
+            "schema": "openpype:container-2.0",
+            "id": AVALON_CONTAINER_ID,
+            "loader": str(self.__class__.__name__),
+        })
+
+        result.SetMetadata(lib.pype_tag_name, json.dumps(data))
+
+        return result
 
     def switch(self, container, context):
         self.update(container, context)
@@ -384,40 +417,74 @@ class LoadMedia(LoaderPlugin):
             value_formatted = StringTemplate(value).format_strict(context)
             media_pool_item.SetClipProperty(clip_property, value_formatted)
 
-    def _get_filepath(self, context: dict) -> Union[str, dict]:
+    def _get_file_info(self, context: dict) -> Tuple[bool, Union[str, dict]]:
+        """Return file info for Resolve ImportMedia.
+
+        Args:
+            context (dict): The context dictionary.
+
+        Returns:
+            Tuple[bool, Union[str, dict]]: A tuple of whether the file is a
+                sequence and the file info dictionary.
+        """
 
         representation = context["representation"]
-        is_sequence = bool(representation["context"].get("frame"))
-        if not is_sequence:
-            return get_representation_path(representation)
+        anatomy = Anatomy(self._project_name)
 
-        version = context["version"]
+        # Get path to representation with correct frame number
+        repre_path = get_representation_path_with_anatomy(
+            representation, anatomy)
 
-        # Get the start and end frame of the image sequence, incl. handles
-        frame_start = version["data"].get("frameStart", 0)
-        frame_end = version["data"].get("frameEnd", 0)
-        handle_start = version["data"].get("handleStart", 0)
-        handle_end = version["data"].get("handleEnd", 0)
-        frame_start_handle = frame_start - handle_start
-        frame_end_handle = frame_end + handle_end
-        padding = len(representation["context"].get("frame"))
+        first_frame = representation["context"].get("frame")
 
-        # We format the frame number to the required token. To do so
-        # we in-place change the representation context data to format the path
-        # with that replaced data
-        representation = copy.deepcopy(representation)
-        representation["context"]["frame"] = f"%0{padding}d"
-        path = get_representation_path(representation)
+        is_sequence = False
+        # is not sequence
+        if first_frame is None:
+            return (
+                is_sequence, {"FilePath": repre_path}
+            )
+
+        # This is sequence
+        is_sequence = True
+        repre_files = [
+            file["path"].format(root=anatomy.roots)
+            for file in representation["files"]
+        ]
+
+        # Change frame in representation context to get path with frame
+        #   splitter.
+        representation["context"]["frame"] = FRAME_SPLITTER
+        frame_repre_path = get_representation_path_with_anatomy(
+            representation, anatomy
+        )
+        frame_repre_path = Path(frame_repre_path)
+        repre_dir, repre_filename = (
+            frame_repre_path.parent, frame_repre_path.name)
+        # Get sequence prefix and suffix
+        file_prefix, file_suffix = repre_filename.split(FRAME_SPLITTER)
+        # Get frame number from path as string to get frame padding
+        frame_str = str(repre_path)[len(file_prefix):][:len(file_suffix)]
+        frame_padding = len(frame_str)
+
+        file_name = f"{file_prefix}%0{frame_padding}d{file_suffix}"
+
+        abs_filepath = Path(repre_dir, file_name)
+
+        start_index = int(first_frame)
+        end_index = int(int(first_frame) + len(repre_files) - 1)
 
         # See Resolve API, to import for example clip "file_[001-100].dpx":
         # ImportMedia([{"FilePath":"file_%03d.dpx",
         #               "StartIndex":1,
         #               "EndIndex":100}])
-        return {
-            "FilePath": path,
-            "StartIndex": frame_start_handle,
-            "EndIndex": frame_end_handle
-        }
+        return (
+            is_sequence,
+            {
+                "FilePath": abs_filepath.as_posix(),
+                "StartIndex": start_index,
+                "EndIndex": end_index,
+            }
+        )
 
     def _get_colorspace(self, representation: dict) -> Optional[str]:
         """Return Resolve native colorspace from OCIO colorspace data.
