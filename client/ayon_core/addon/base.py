@@ -28,16 +28,16 @@ from .interfaces import (
 )
 
 # Files that will be always ignored on addons import
-IGNORED_FILENAMES = (
+IGNORED_FILENAMES = {
     "__pycache__",
-)
+}
 # Files ignored on addons import from "./ayon_core/modules"
-IGNORED_DEFAULT_FILENAMES = (
+IGNORED_DEFAULT_FILENAMES = {
     "__init__.py",
     "base.py",
     "interfaces.py",
     "click_wrap.py",
-)
+}
 
 # When addon was moved from ayon-core codebase
 # - this is used to log the missing addon
@@ -413,16 +413,16 @@ def _load_addons_in_core(
     #   - has small differences in import logic
     modules_dir = os.path.join(AYON_CORE_ROOT, "modules")
     if not os.path.exists(modules_dir):
-        log.warning((
-            "Could not find path when loading AYON addons \"{}\""
-        ).format(modules_dir))
+        log.warning(
+            f"Could not find path when loading AYON addons \"{modules_dir}\""
+        )
         return
 
-    ignored_filenames = set(IGNORED_DEFAULT_FILENAMES)
+    ignored_filenames = IGNORED_FILENAMES | IGNORED_DEFAULT_FILENAMES
 
     for filename in os.listdir(modules_dir):
         # Ignore filenames
-        if filename in IGNORED_FILENAMES or filename in ignored_filenames:
+        if filename in ignored_filenames:
             continue
 
         fullpath = os.path.join(modules_dir, filename)
@@ -438,20 +438,20 @@ def _load_addons_in_core(
             if not os.path.exists(init_path):
                 log.debug((
                     "Addon directory does not contain __init__.py"
-                    " file {}"
-                ).format(fullpath))
+                    f" file {fullpath}"
+                ))
                 continue
 
-        elif ext not in (".py", ):
+        elif ext != ".py":
             continue
 
         # TODO add more logic how to define if folder is addon or not
         # - check manifest and content of manifest
         try:
             # Don't import dynamically current directory modules
-            new_import_str = "{}.{}".format(modules_key, basename)
+            new_import_str = f"{modules_key}.{basename}"
 
-            import_str = "ayon_core.modules.{}".format(basename)
+            import_str = f"ayon_core.modules.{basename}"
             default_module = __import__(import_str, fromlist=("", ))
             sys.modules[new_import_str] = default_module
             setattr(openpype_modules, basename, default_module)
