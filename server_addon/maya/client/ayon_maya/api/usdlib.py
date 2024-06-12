@@ -1,4 +1,4 @@
-from openpype.pipeline.constants import AVALON_CONTAINER_ID
+from ayon_core.pipeline.constants import AVALON_CONTAINER_ID
 from pxr import Sdf
 
 from maya import cmds
