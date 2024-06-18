@@ -70,8 +70,12 @@ class SelectVersionComboBox(QtWidgets.QComboBox):
         self._combo_view = combo_view
         self._status_delegate = status_delegate
         self._items_by_id = {}
+        self._status_visible = True
 
     def paintEvent(self, event):
+        if not self._status_visible:
+            return super().paintEvent(event)
+
         painter = QtWidgets.QStylePainter(self)
         option = QtWidgets.QStyleOptionComboBox()
         self.initStyleOption(option)
@@ -91,8 +95,8 @@ class SelectVersionComboBox(QtWidgets.QComboBox):
             QtWidgets.QStyle.SC_ComboBoxEditField
         ).adjusted(1, 0, -1, 0)
 
-        metrics = QtGui.QFontMetrics(self.font())
-        version_text_width = metrics.width(option.currentText)
+        metrics = option.fontMetrics
+        version_text_width = metrics.width(option.currentText) + 2
         version_text_rect = QtCore.QRect(content_field_rect)
         version_text_rect.setWidth(version_text_width)
 
@@ -106,8 +110,13 @@ class SelectVersionComboBox(QtWidgets.QComboBox):
         status_text_rect.setLeft(version_text_rect.right() + 2)
         if status_icon is not None and not status_icon.isNull():
             icon_rect = QtCore.QRect(status_text_rect)
-            icon_rect.adjust(0, 2, 0, -2)
-            icon_rect.setWidth(icon_rect.height())
+            diff = icon_rect.height() - metrics.height()
+            if diff < 0:
+                diff = 0
+            top_offset = diff // 2
+            bottom_offset = diff - top_offset
+            icon_rect.adjust(0, top_offset, 0, -bottom_offset)
+            icon_rect.setWidth(metrics.height())
             status_icon.paint(
                 painter,
                 icon_rect,
@@ -142,6 +151,12 @@ class SelectVersionComboBox(QtWidgets.QComboBox):
             return
 
         self.setCurrentIndex(index)
+
+    def set_status_visible(self, visible):
+        header = self._combo_view.header()
+        header.setSectionHidden(1, not visible)
+        self._status_visible = visible
+        self.update()
 
     def get_item_by_id(self, item_id):
         return self._items_by_id[item_id]
@@ -229,10 +244,16 @@ class SelectVersionDialog(QtWidgets.QDialog):
     def select_index(self, index):
         self._versions_combobox.set_current_index(index)
 
+    def set_status_visible(self, visible):
+        self._versions_combobox.set_status_visible(visible)
+
     @classmethod
-    def ask_for_version(cls, version_options, index=None, parent=None):
+    def ask_for_version(
+        cls, version_options, index=None, show_statuses=True, parent=None
+    ):
         dialog = cls(parent)
         dialog.set_versions(version_options)
+        dialog.set_status_visible(show_statuses)
         if index is not None:
             dialog.select_index(index)
         dialog.exec_()
