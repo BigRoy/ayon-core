@@ -27,6 +27,13 @@ class ValidateUSDRenderSingleFile(plugin.HoudiniInstancePlugin):
     actions = [SelectROPAction, RepairAction]
 
     def process(self, instance):
+
+        if instance.data.get("creator_attributes",
+                             {}).get("render_target") != "farm_split":
+            # Validation is only relevant when submitting a farm job where the
+            # export and render are separate jobs.
+            return
+
         # Get configured settings for this instance
         submission_data = (
             instance.data
