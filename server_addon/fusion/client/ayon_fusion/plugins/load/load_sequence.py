@@ -162,6 +162,8 @@ class FusionLoadSequence(load.LoaderPlugin):
             tool = comp.AddTool("Loader", *args)
             tool["Clip"] = comp.ReverseMapPath(path)
 
+            self._set_name(tool, context)
+
             # Set global in point to start frame (if in version.data)
             start = self._get_start(context["version"], tool)
             loader_shift(tool, start, relative=False)
@@ -289,3 +291,16 @@ class FusionLoadSequence(load.LoaderPlugin):
             start -= handle_start
 
         return start
+
+    def _set_name(self, tool, context):
+        # NOTE: Colorbleed-specific edit
+        # Name tool to subset without the product type prefix
+        # 'renderLightingMain' becomes `LightingMain`
+        product_entity = context["product"]
+        label: str = product_entity["name"]
+        product_type: str = product_entity["productType"]
+        label = label.removeprefix(product_type)
+        tool.SetAttrs({
+            "TOOLS_Name": label,
+            "TOOLB_NameSet": True
+        })
