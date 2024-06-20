@@ -4,6 +4,7 @@ import os
 import logging
 import platform
 import uuid
+from typing import Union
 
 import ayon_api
 import pyblish.api
@@ -280,7 +281,7 @@ def register_host(host):
     """Register a new host for the current process
 
     Arguments:
-        host (ModuleType): A module implementing the
+        host (Union[HostBase, ModuleType]): A module implementing the
             Host API interface. See the Host API
             documentation for details on what is
             required, or browse the source code.
@@ -290,7 +291,7 @@ def register_host(host):
     _registered_host["_"] = host
 
 
-def registered_host():
+def registered_host() -> Union[HostBase, None]:
     """Return currently registered host"""
     return _registered_host["_"]
 
