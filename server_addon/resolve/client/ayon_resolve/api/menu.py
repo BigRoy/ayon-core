@@ -65,6 +65,9 @@ class AYONMenu(QtWidgets.QWidget):
         experimental_btn = QtWidgets.QPushButton(
             "Experimental tools ...", self
         )
+        script_editor_btn = QtWidgets.QPushButton(
+            "Script Editor ...", self
+        )
         # rename_btn = QtWidgets.QPushButton("Rename", self)
         # set_colorspace_btn = QtWidgets.QPushButton(
         #     "Set colorspace from presets", self
@@ -101,6 +104,7 @@ class AYONMenu(QtWidgets.QWidget):
         # layout.addWidget(reset_resolution_btn)
         layout.addWidget(Spacer(15, self))
         layout.addWidget(experimental_btn)
+        layout.addWidget(script_editor_btn)
 
         self.setLayout(layout)
 
@@ -117,6 +121,7 @@ class AYONMenu(QtWidgets.QWidget):
         # set_colorspace_btn.clicked.connect(self.on_set_colorspace_clicked)
         # reset_resolution_btn.clicked.connect(self.on_set_resolution_clicked)
         experimental_btn.clicked.connect(self.on_experimental_clicked)
+        script_editor_btn.clicked.connect(self.on_script_editor_clicked)
 
     def on_save_current_clicked(self):
         host = registered_host()
@@ -169,6 +174,14 @@ class AYONMenu(QtWidgets.QWidget):
 
     def on_experimental_clicked(self):
         host_tools.show_experimental_tools_dialog()
+
+    def on_script_editor_clicked(self):
+        from ayon_core.modules.python_console_interpreter.window import (
+            PythonInterpreterWidget
+        )
+        widget = PythonInterpreterWidget(parent=self)
+        widget.setWindowFlags(widget.windowFlags() | QtCore.Qt.Dialog)
+        widget.show()
 
 
 def launch_ayon_menu():
