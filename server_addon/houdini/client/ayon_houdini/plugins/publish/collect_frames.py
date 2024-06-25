@@ -41,21 +41,23 @@ class CollectFrames(plugin.HoudiniInstancePlugin):
         file_name = os.path.basename(output)
         result = file_name
 
-        # Get the filename pattern match from the output
-        # path, so we can compute all frames that would
-        # come out from rendering the ROP node if there
-        # is a frame pattern in the name
-        pattern = r"\w+\.(\d+)" + re.escape(ext)
+        # Get the filename pattern match from the output path, so we can 
+        # compute all frames that would come out from rendering the ROP node
+        # if there is a frame pattern in the name
+        pattern = r".*\.(\d+)" + re.escape(ext) + "$"
         match = re.match(pattern, file_name)
 
         if match and start_frame is not None:
-
+            self.log.debug("Collecting file sequence %s [%s-%s]",
+                           file_name, start_frame, end_frame)
             # Check if frames are bigger than 1 (file collection)
             # override the result
             if end_frame - start_frame > 0:
                 result = self.create_file_list(
                     match, int(start_frame), int(end_frame)
                 )
+        else:
+            self.log.debug("Collecting single file %s", file_name)
 
         # todo: `frames` currently conflicts with "explicit frames" for a
         #       for a custom frame list. So this should be refactored.
