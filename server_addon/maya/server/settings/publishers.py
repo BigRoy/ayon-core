@@ -643,6 +643,10 @@ class PublishersModel(BaseSettingsModel):
         default_factory=CollectFbxCameraModel,
         title="Collect Camera for FBX export",
     )
+    CollectFbxModel: BasicValidateModel = SettingsField(
+        default_factory=BasicValidateModel,
+        title="Collect Model for FBX export",
+    )
     CollectGLTF: CollectGLTFModel = SettingsField(
         default_factory=CollectGLTFModel,
         title="Collect Assets for GLB/GLTF export"
@@ -1076,6 +1080,11 @@ DEFAULT_PUBLISH_SETTINGS = {
     },
     "CollectFbxCamera": {
         "enabled": False
+    },
+    "CollectFbxModel": {
+        "enabled": False,
+        "optional": True,
+        "active": True
     },
     "CollectGLTF": {
         "enabled": False
