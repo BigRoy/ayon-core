@@ -645,7 +645,7 @@ class CreateHoudiniGeneric(plugin.HoudiniCreator):
 
         set_values(instance_node, parm_values)
 
-        # TODO: Update defaults for Variant, Product Type, Product Name
+        # TODO: Update defaults for Product Name
         #   on the node so Houdini doesn't show them bold after save
 
     def get_publish_families(self):
