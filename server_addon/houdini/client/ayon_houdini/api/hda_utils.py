@@ -54,11 +54,14 @@ def _unlocked_parm(parm):
 def get_available_versions(node):
     """Return the versions list for node.
 
+    The versions are sorted with the latest version first and oldest lower
+    version last.
+
     Args:
         node (hou.Node): Node to query selected products' versions for.
 
     Returns:
-        List[int]: Version numbers for the product
+        list[int]: Version numbers for the product
     """
 
     project_name = node.evalParm("project_name") or get_current_project_name()
@@ -132,7 +135,7 @@ def update_info(node, context):
     node.setParms(parms)
 
 
-def _get_thumbnail(project_name, version_id, thumbnail_dir):
+def _get_thumbnail(project_name: str, version_id: str, thumbnail_dir: str):
     folder = hou.text.expandString(thumbnail_dir)
     path = os.path.join(folder, "{}_thumbnail.jpg".format(version_id))
     expanded_path = hou.text.expandString(path)
@@ -151,9 +154,9 @@ def _get_thumbnail(project_name, version_id, thumbnail_dir):
         return path
 
 
-def set_representation(node, repre_id):
+def set_representation(node, representation_id: str):
     file_parm = node.parm("file")
-    if not repre_id:
+    if not representation_id:
         # Clear filepath and thumbnail
         with _unlocked_parm(file_parm):
             file_parm.set("")
@@ -167,10 +170,10 @@ def set_representation(node, repre_id):
 
     # Ignore invalid representation ids silently
     # TODO remove - added for backwards compatibility with OpenPype scenes
-    if not is_valid_uuid(repre_id):
+    if not is_valid_uuid(representation_id):
         return
 
-    repre_entity = get_representation_by_id(project_name, repre_id)
+    repre_entity = get_representation_by_id(project_name, representation_id)
     if not repre_entity:
         return
 
@@ -195,7 +198,7 @@ def set_representation(node, repre_id):
         set_node_thumbnail(node, thumbnail_path)
 
 
-def set_node_thumbnail(node, thumbnail):
+def set_node_thumbnail(node, thumbnail: str):
     """Update node thumbnail to thumbnail"""
     if thumbnail is None:
         lib.set_node_thumbnail(node, None)
@@ -542,3 +545,49 @@ def select_folder_path(node):
     folder_parm = node.parm("folder_path")
     folder_parm.set(selected_folder_path)
     folder_parm.pressButton()  # allow any callbacks to trigger
+
+
+def get_available_products(node):
+    """Return products menu items
+    It gets a list of available products of the specified product types
+      within the specified folder path with in the specified project.
+    Users can specify those in the HDA parameters.
+
+    Args:
+        node (hou.OpNode): The HDA node.
+
+    Returns:
+        list[str]: Product names for Products menu.
+    """
+    project_name = node.evalParm("project_name")
+    folder_path = node.evalParm("folder_path")
+    product_type = node.evalParm("product_type")
+
+    folder_entity = ayon_api.get_folder_by_path(project_name,
+                                                folder_path,
+                                                fields={"id"})
+    if not folder_entity:
+        return []
+
+    products = ayon_api.get_products(
+        project_name,
+        folder_ids=[folder_entity["id"]],
+        product_types=[product_type]
+    )
+
+    return [product["name"] for product in products]
+
+
+def set_to_latest_version(node):
+    """Callback on product name change
+
+    Refresh version parameter value by setting its value to
+    the latest version of the selected product.
+
+    Args:
+        node (hou.OpNode): The HDA node.
+    """
+
+    versions = get_available_versions(node)
+    if versions:
+        node.parm("version").set(str(versions[0]))
