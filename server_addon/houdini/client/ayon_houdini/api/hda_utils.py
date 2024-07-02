@@ -430,19 +430,19 @@ def keep_background_images_linked(node, old_name):
         set_background_images(parent, images)
 
 
-class PickAssetDialog(QtWidgets.QDialog):
+class SelectFolderPathDialog(QtWidgets.QDialog):
     """Simple dialog to allow a user to select project and asset."""
 
     def __init__(self, parent=None):
-        super(PickAssetDialog, self).__init__(parent)
-        self.setWindowTitle("Select project and folder path..")
+        super(SelectFolderPathDialog, self).__init__(parent)
+        self.setWindowTitle("Set project and folder path")
         self.setStyleSheet(load_stylesheet())
 
         project_widget = QtWidgets.QComboBox()
         project_widget.addItems(self.get_projects())
 
         filter_widget = QtWidgets.QLineEdit()
-        filter_widget.setPlaceholderText("Filter folders..")
+        filter_widget.setPlaceholderText("Folder name filter...")
 
         folder_widget = SimpleFoldersWidget(parent=self)
 
@@ -507,7 +507,7 @@ def select_folder_path(node):
     project_name = node.evalParm("project_name")
     folder_path = node.evalParm("folder_path")
 
-    dialog = PickAssetDialog(parent=main_window)
+    dialog = SelectFolderPathDialog(parent=main_window)
     dialog.set_project_name(project_name)
     if folder_path:
         # We add a small delay to the setting of the selected folder
