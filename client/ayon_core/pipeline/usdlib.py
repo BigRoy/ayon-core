@@ -3,10 +3,10 @@ import os
 import logging
 
 try:
-    from pxr import Usd, UsdGeom, Sdf, Kind
+    from pxr import UsdGeom, Sdf, Kind
 except ImportError:
     # Allow to fall back on Multiverse 6.3.0+ pxr usd library
-    from mvpxr import Usd, UsdGeom, Sdf, Kind
+    from mvpxr import UsdGeom, Sdf, Kind
 
 log = logging.getLogger(__name__)
 
@@ -29,8 +29,7 @@ class Layer:
             anchor_path = self.anchor.get_full_path()
             root = os.path.dirname(anchor_path)
             return os.path.normpath(os.path.join(root, self.path))
-        else:
-            return self.path
+        return self.path
 
     def export(self, path=None, args=None):
         """Save the layer"""
@@ -44,8 +43,19 @@ class Layer:
 
     @classmethod
     def create_anonymous(cls, path, tag="LOP", anchor=None):
+        """Create an anonymous layer instance.
+
+        Arguments:
+            path (str): The layer's filepath.
+            tag (Optional[str]): The tag to give to the anonymous layer.
+                This defaults to 'LOP' because Houdini requires that tag for
+                its in-memory layers that it will be able to manage. In other
+                integrations no similar requirements have been found so it was
+                deemed a 'safe' default for now.
+            anchor (Optional[Layer]): Another layer to relatively anchor to.
+        """
         sdf_layer = Sdf.Layer.CreateAnonymous(tag)
-        return cls(layer=sdf_layer, path=path, anchor=anchor, tag=tag)
+        return cls(layer=sdf_layer, path=path, anchor=anchor)
 
 
 def setup_asset_layer(
@@ -407,11 +417,11 @@ def add_variant_references_to_layer(
         skip_variant_on_single_file (bool): If this is enabled and only
             a single variant is provided then do not create the variant set
             but just reference that single file.
-        layer (Sdf.Layer): When provided operate on this layer, otherwise
-            create an anonymous layer in memory.
+        layer (Optional[Sdf.Layer]): When provided operate on this layer,
+            otherwise create an anonymous layer in memory.
 
     Returns:
-        Usd.Stage: The saved usd stage
+        Sdf.Layer: The layer with the added references inside the variants.
 
     """
     if layer is None:
@@ -609,9 +619,14 @@ def add_ordered_reference(
     return prim_spec
 
 
-def set_variant_reference(sdf_layer, prim_path, variant_selections, path,
-                          as_payload=False,
-                          append=True):
+def set_variant_reference(
+        sdf_layer,
+        prim_path,
+        variant_selections,
+        path,
+        as_payload=False,
+        append=True
+):
     """Get or define variant selection at prim path and add a reference
 
     If the Variant Prim already exists the prepended references are replaced

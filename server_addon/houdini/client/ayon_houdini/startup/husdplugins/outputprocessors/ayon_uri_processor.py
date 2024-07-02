@@ -2,15 +2,16 @@ import logging
 
 from husd.outputprocessor import OutputProcessor
 
-from ayon_core.pipeline import ayon_uri
+from ayon_core.pipeline import entity_uri
+from ayon_core.pipeline.load.utils import get_representation_path_by_names
 
 
-class AyonURIOutputProcessor(OutputProcessor):
-    """Process Ayon URIs into their full path equivalents."""
+class AYONURIOutputProcessor(OutputProcessor):
+    """Process AYON Entity URIs into their full path equivalents."""
 
     def __init__(self):
         """ There is only one object of each output processor class that is
-            ever created in a Houdini session. Therefore be very careful
+            ever created in a Houdini session. Therefore, be very careful
             about what data gets put in this object.
         """
         self._save_cache = dict()
@@ -24,7 +25,7 @@ class AyonURIOutputProcessor(OutputProcessor):
 
     @staticmethod
     def displayName():
-        return "Ayon URI Output Processor"
+        return "AYON URI Output Processor"
 
     def processReferencePath(self,
                              asset_path,
@@ -54,7 +55,7 @@ class AyonURIOutputProcessor(OutputProcessor):
         if asset_path in cache:
             return cache[asset_path]
 
-        uri_data = ayon_uri.parse_ayon_uri(asset_path)
+        uri_data = entity_uri.parse_ayon_entity_uri(asset_path)
         if not uri_data:
             cache[asset_path] = asset_path
             return asset_path
@@ -62,17 +63,17 @@ class AyonURIOutputProcessor(OutputProcessor):
         # Try and find it as an existing publish
         query = {
             "project_name": uri_data["project"],
-            "asset_name": uri_data["asset"],
-            "subset_name": uri_data["product"],
+            "folder_path": uri_data["folder"],
+            "product_name": uri_data["product"],
             "version_name": uri_data["version"],
             "representation_name": uri_data["representation"],
         }
-        path = ayon_uri.get_representation_path_by_names(
+        path = get_representation_path_by_names(
             **query
         )
         if path:
             self.log.debug(
-                "Ayon URI Resolver - ref: %s -> %s", asset_path, path
+                "AYON URI Resolver - ref: %s -> %s", asset_path, path
             )
             cache[asset_path] = path
             return path
@@ -115,7 +116,7 @@ class AyonURIOutputProcessor(OutputProcessor):
         if asset_path in cache:
             return cache[asset_path]
 
-        uri_data = ayon_uri.parse_ayon_uri(asset_path)
+        uri_data = entity_uri.parse_ayon_entity_uri(asset_path)
         if not uri_data:
             cache[asset_path] = asset_path
             return asset_path
@@ -125,10 +126,10 @@ class AyonURIOutputProcessor(OutputProcessor):
         # processors can potentially manage it easily?
         path = relative_template.format(**uri_data)
 
-        self.log.debug("Ayon URI Resolver - save: %s -> %s", asset_path, path)
+        self.log.debug("AYON URI Resolver - save: %s -> %s", asset_path, path)
         cache[asset_path] = path
         return path
 
 
 def usdOutputProcessor():
-    return AyonURIOutputProcessor
+    return AYONURIOutputProcessor

@@ -1,6 +1,7 @@
 from operator import attrgetter
 import dataclasses
 import os
+from typing import Dict
 
 import pyblish.api
 from pxr import Sdf
@@ -12,7 +13,7 @@ from ayon_core.lib import (
     UILabelDef,
     EnumDef
 )
-from ayon_core.lib.usdlib import (
+from ayon_core.pipeline.usdlib import (
     get_or_define_prim_spec,
     add_ordered_reference,
     variant_nested_prim_path,
@@ -20,41 +21,14 @@ from ayon_core.lib.usdlib import (
     add_ordered_sublayer,
     set_layer_defaults
 )
-from ayon_core.pipeline.ayon_uri import (
-    construct_ayon_uri,
-    parse_ayon_uri,
-    get_representation_path_by_ayon_uri,
-    get_representation_path_by_names
+from ayon_core.pipeline.entity_uri import (
+    construct_ayon_entity_uri,
+    parse_ayon_entity_uri
 )
+from ayon_core.pipeline.load.utils import get_representation_path_by_names
+from ayon_core.pipeline.publish.lib import get_instance_expected_output_path
 from ayon_core.pipeline import publish
 
-
-# A contribution defines a contribution into a (department) layer which will
-# get layered into the target product, usually the asset or shot.
-# We need to at least know what it targets (e.g. where does it go into) and
-# in what order (which contribution is stronger?)
-# Preferably the bootstrapped data (e.g. the Shot) preserves metadata about
-# the contributions so that we can design a system where custom contributions
-# outside of the predefined orders are possible to be managed. So that if a
-# particular asset requires an extra contribution level, you can add it
-# directly from the publisher at that particular order. Future publishes will
-# then see the existing contribution and will persist adding it to future
-# bootstraps at that order
-# TODO: Avoid hardcoded ordering - might need to be set through settings?
-LAYER_ORDERS = {
-    # asset layers
-    "model": 100,
-    "assembly": 150,
-    "groom": 175,
-    "look": 200,
-    "rig": 300,
-    # shot layers
-    "layout": 200,
-    "animation": 300,
-    "simulation": 400,
-    "fx": 500,
-    "lighting": 600,
-}
 
 # This global toggle is here mostly for debugging purposes and should usually
 # be True so that new publishes merge and extend on previous contributions.
@@ -91,6 +65,70 @@ class VariantContribution(_BaseContribution):
     variant_is_default: bool  # Whether to author variant selection opinion
 
 
+def get_representation_path_in_publish_context(
+    context: pyblish.api.Context,
+    project_name,
+    folder_path,
+    product_name,
+    version_name,
+    representation_name,
+):
+    """Return resolved path for product if present in publishing context.
+
+    Allow resolving 'latest' paths from a publishing context's instances
+    as if they will exist after publishing without them being integrated yet.
+
+    Use first instance that has same folder path and product name,
+    and contains representation with passed name.
+
+    Args:
+        context (pyblish.api.Context): Publishing context.
+        project_name (str): Project name.
+        folder_path (str): Folder path.
+        product_name (str): Product name.
+        version_name (str): Version name.
+        representation_name (str): Representation name.
+
+    Returns:
+        Union[str, None]: Returns the path if it could be resolved
+
+    """
+    # The AYON publishing logic is set up in such a way that you can not
+    # publish to another project. As such, we know if the project name we're
+    # looking for doesn't match the publishing context it'll not be in there.
+    if context.data["projectName"] != project_name:
+        return
+
+    if version_name == "hero":
+        raise NotImplementedError(
+            "Hero version resolving not implemented from context"
+        )
+
+    # Search first in publish context to allow resolving latest versions
+    # from e.g. the current publish session if the context is provided
+    specific_version = isinstance(version_name, int)
+    for instance in context:
+        if instance.data.get("folderPath") != folder_path:
+            continue
+
+        if instance.data.get("productName") != product_name:
+            continue
+
+        # Only consider if the instance has a representation by
+        # that name
+        representations = instance.data.get("representations", [])
+        if not any(representation.get("name") == representation_name
+                   for representation in representations):
+            continue
+
+        return get_instance_expected_output_path(
+            instance,
+            representation_name=representation_name,
+            ext=None,
+            version=version_name if specific_version else None
+        )
+
+
 def get_instance_uri_path(
         instance,
         resolve=True
@@ -102,7 +140,7 @@ def get_instance_uri_path(
     project_name = context.data["projectName"]
 
     # Get the layer's published path
-    path = construct_ayon_uri(
+    path = construct_ayon_entity_uri(
         project_name=project_name,
         folder_path=folder_path,
         product=product_name,
@@ -113,11 +151,24 @@ def get_instance_uri_path(
     # Resolve contribution path
     # TODO: Remove this when Asset Resolver is used
     if resolve:
-        path = get_representation_path_by_ayon_uri(
-            path,
-            # Allow also resolving live to entries from current context
-            context=instance.context
-        )
+        query = parse_ayon_entity_uri(path)
+        names = {
+            "project_name": query["project"],
+            "folder_path": query["folderPath"],
+            "product_name": query["product"],
+            "version_name": query["version"],
+            "representation_name": query["representation"],
+        }
+
+        # We want to resolve the paths live from the publishing context
+        path = get_representation_path_in_publish_context(context, **names)
+        if path:
+            return path
+
+        # If for whatever reason we were unable to retrieve from the context
+        # then get the path from an existing database entry
+        path = get_representation_path_by_names(**query)
+
         # Ensure `None` for now is also a string
         path = str(path)
 
@@ -125,6 +176,7 @@ def get_instance_uri_path(
 
 
 def get_last_publish(instance, representation="usd"):
+    """Wrapper to quickly get last representation publish path"""
     path = get_representation_path_by_names(
         project_name=instance.context.data["projectName"],
         folder_path=instance.data["folderPath"],
@@ -152,6 +204,9 @@ def add_representation(instance, name,
     Arguments:
         instance (pyblish.api.Instance): Publish instance
         name (str): The representation name
+        files (str | List[str]): List of files or single file of the
+            representation. This should be the filename only.
+        staging_dir (str): The directory containing the files.
         ext (Optional[str]): Explicit extension for the output
         output_name (Optional[str]): Output name suffix for the
             destination file to ensure the file is unique if
@@ -195,6 +250,49 @@ class CollectUSDLayerContributions(pyblish.api.InstancePlugin,
     order = pyblish.api.CollectorOrder + 0.35
     label = "Collect USD Layer Contributions (Asset/Shot)"
     families = ["usd"]
+    enabled = True
+
+    # A contribution defines a contribution into a (department) layer which
+    # will get layered into the target product, usually the asset or shot.
+    # We need to at least know what it targets (e.g. where does it go into) and
+    # in what order (which contribution is stronger?)
+    # Preferably the bootstrapped data (e.g. the Shot) preserves metadata about
+    # the contributions so that we can design a system where custom
+    # contributions outside the predefined orders are possible to be
+    # managed. So that if a particular asset requires an extra contribution
+    # level, you can add itdirectly from the publisher at that particular
+    # order. Future publishes will then see the existing contribution and will
+    # persist adding it to future bootstraps at that order
+    contribution_layers: Dict[str, int] = {
+        # asset layers
+        "model": 100,
+        "assembly": 150,
+        "groom": 175,
+        "look": 200,
+        "rig": 300,
+        # shot layers
+        "layout": 200,
+        "animation": 300,
+        "simulation": 400,
+        "fx": 500,
+        "lighting": 600,
+    }
+
+    @classmethod
+    def apply_settings(cls, project_settings):
+        # Override contribution_layers logic to turn data into Dict[str, int]
+        plugin_settings = project_settings["core"]["publish"].get(
+            "CollectUSDLayerContributions", {}
+        )
+
+        cls.enabled = plugin_settings.get("enabled", cls.enabled)
+
+        # Define contribution layers via settings
+        contribution_layers = {}
+        for entry in plugin_settings.get("contribution_layers", []):
+            contribution_layers[entry["name"]] = int(entry["order"])
+        if contribution_layers:
+            cls.contribution_layers = contribution_layers
 
     def process(self, instance):
 
@@ -216,7 +314,9 @@ class CollectUSDLayerContributions(pyblish.api.InstancePlugin,
             attr_values[key] = attr_values[key].format(**data)
 
         # Define contribution
-        order = LAYER_ORDERS.get(attr_values["contribution_layer"], 0)
+        order = self.contribution_layers.get(
+            attr_values["contribution_layer"], 0
+        )
 
         if attr_values["contribution_apply_as_variant"]:
             contribution = VariantContribution(
@@ -402,7 +502,7 @@ class CollectUSDLayerContributions(pyblish.api.InstancePlugin,
                         "predefined ordering.\nA higher order (further down "
                         "the list) will contribute as a stronger opinion."
                     ),
-                    items=list(LAYER_ORDERS.keys()),
+                    items=list(cls.contribution_layers.keys()),
                     default="model"),
             BoolDef("contribution_apply_as_variant",
                     label="Add as variant",
@@ -582,7 +682,7 @@ class ExtractUSDLayerContribution(publish.Extractor):
                                    filepath: str,
                                    contribution: VariantContribution):
         instance = contribution.instance
-        uri = construct_ayon_uri(
+        uri = construct_ayon_entity_uri(
             project_name=instance.data["projectEntity"]["name"],
             folder_path=instance.data["folderPath"],
             product=instance.data["productName"],
@@ -600,7 +700,7 @@ class ExtractUSDLayerContribution(publish.Extractor):
 
     def instance_match_ayon_uri(self, instance, ayon_uri):
 
-        uri_data = parse_ayon_uri(ayon_uri)
+        uri_data = parse_ayon_entity_uri(ayon_uri)
         if not uri_data:
             return False
 

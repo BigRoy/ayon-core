@@ -5,7 +5,7 @@ import hou
 from husd.outputprocessor import OutputProcessor
 
 
-class AyonRemapPaths(OutputProcessor):
+class AYONRemapPaths(OutputProcessor):
     """Remap paths based on a mapping dict on rop node."""
 
     def __init__(self):
@@ -17,7 +17,7 @@ class AyonRemapPaths(OutputProcessor):
 
     @staticmethod
     def displayName():
-        return "Ayon Remap Paths"
+        return "AYON Remap Paths"
 
     @staticmethod
     def hidden():
@@ -39,7 +39,7 @@ class AyonRemapPaths(OutputProcessor):
         return group.asDialogScript()
 
     def beginSave(self, config_node, config_overrides, lop_node, t):
-        super(AyonRemapPaths, self).beginSave(config_node,
+        super(AYONRemapPaths, self).beginSave(config_node,
                                               config_overrides,
                                               lop_node,
                                               t)
@@ -63,4 +63,4 @@ class AyonRemapPaths(OutputProcessor):
 
 
 def usdOutputProcessor():
-    return AyonRemapPaths
+    return AYONRemapPaths
