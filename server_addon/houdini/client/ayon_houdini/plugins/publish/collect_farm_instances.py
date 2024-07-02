@@ -11,6 +11,7 @@ class CollectFarmInstances(plugin.HoudiniInstancePlugin):
                 "redshift_rop",
                 "arnold_rop",
                 "vray_rop",
+                "usdrender",
                 "generic"]
 
     targets = ["local", "remote"]
