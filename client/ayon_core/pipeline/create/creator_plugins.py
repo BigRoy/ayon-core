@@ -23,9 +23,9 @@ from .utils import get_next_versions_for_instances
 from .legacy_create import LegacyCreator
 
 if TYPE_CHECKING:
-    # Avoid cyclic imports
-    from .context import CreateContext, CreatedInstance, UpdateData
     from ayon_core.lib import AbstractAttrDef
+    # Avoid cyclic imports
+    from .context import CreateContext, CreatedInstance, UpdateData  # noqa: F401
 
 
 class CreatorError(Exception):
