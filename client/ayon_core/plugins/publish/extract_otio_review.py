@@ -71,14 +71,15 @@ class ExtractOTIOReview(
         # TODO: convert resulting image sequence to mp4
 
         # get otio clip and other time info from instance clip
-        # TODO: what if handles are different in `versionData`?
-        handle_start = instance.data["handleStart"]
-        handle_end = instance.data["handleEnd"]
         otio_review_clips = instance.data.get("otioReviewClips")
 
         if otio_review_clips is None:
             self.log.info(f"Instance `{instance}` has no otioReviewClips")
             return
+
+        # TODO: what if handles are different in `versionData`?
+        handle_start = instance.data["handleStart"]
+        handle_end = instance.data["handleEnd"]
 
         # add plugin wide attributes
         self.representation_files = []
@@ -208,13 +209,9 @@ class ExtractOTIOReview(
                 # File sequence way
                 if is_sequence:
                     # Remap processing range to input file sequence.
-                    processing_range_as_frames = (
-                        processing_range.start_time.to_frames(),
-                        processing_range.end_time_inclusive().to_frames()
-                    )
                     first, last = remap_range_on_file_sequence(
                         r_otio_cl,
-                        processing_range_as_frames,
+                        processing_range,
                     )
                     input_fps = processing_range.start_time.rate
 
