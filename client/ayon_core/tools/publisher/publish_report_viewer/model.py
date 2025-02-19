@@ -137,8 +137,7 @@ class PluginsModel(QtGui.QStandardItemModel):
         cur_order, cur_label = next(labels_iter)
         cur_plugin_items = []
 
-        plugin_items_by_group_labels = []
-        plugin_items_by_group_labels.append((cur_label, cur_plugin_items))
+        plugin_items_by_group_labels = [(cur_label, cur_plugin_items)]
         for plugin_id in report_item.plugins_id_order:
             plugin_item = report_item.plugins_items_by_id[plugin_id]
             if cur_order is not None and plugin_item.order >= cur_order:

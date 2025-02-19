@@ -4,6 +4,11 @@ import copy
 
 
 class PluginItem:
+    __slots__ = (
+        "_id", "name", "label", "order", "skipped", "passed", "docstring",
+        "filepath", "plugin_type", "families", "process_time", "errored"
+    )
+
     def __init__(self, plugin_data):
         self._id = uuid.uuid4()
 
@@ -39,6 +44,8 @@ class PluginItem:
 
 
 class InstanceItem:
+    __slots__ = ('_id', 'label', 'family', 'removed', 'errored')
+
     def __init__(self, instance_id, instance_data, logs_by_instance_id):
         self._id = instance_id
         self.label = instance_data.get("label") or instance_data.get("name")
@@ -60,6 +67,8 @@ class InstanceItem:
 
 
 class LogItem:
+    __slots__ = ('_instance_id', '_plugin_id', '_errored', 'data')
+
     def __init__(self, log_item_data, plugin_id, instance_id):
         self._instance_id = instance_id
         self._plugin_id = plugin_id

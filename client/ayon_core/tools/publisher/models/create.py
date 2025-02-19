@@ -82,6 +82,12 @@ class CreatorItem:
 
     Object can be serialized and recreated.
     """
+    __slots__ = (
+        "identifier", "creator_type", "product_type", "label", "group_label",
+        "icon", "description", "detailed_description", "default_variant",
+        "default_variants", "create_allow_context_change",
+        "create_allow_thumbnail", "show_order", "pre_create_attributes_defs",
+    )
 
     def __init__(
         self,
@@ -205,6 +211,11 @@ class CreatorItem:
 
 
 class InstanceItem:
+    __slots__ = (
+        "_instance_id", "_creator_identifier", "_label", "_group_label",
+        "_product_type", "_product_name", "_variant", "_folder_path",
+        "_task_name", "_is_active", "_has_promised_context"
+    )
     def __init__(
         self,
         instance_id: str,

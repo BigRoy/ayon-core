@@ -36,6 +36,9 @@ class FolderItem:
         folder_type (str): Type of folder.
         label (Union[str, None]): Folder label.
     """
+    __slots__ = (
+        "entity_id", "parent_id", "name", "path", "folder_type", "label"
+    )
 
     def __init__(
         self, entity_id, parent_id, name, path, folder_type, label
@@ -92,6 +95,9 @@ class TaskItem:
         task_type (str): Type of task.
         parent_id (str): Parent folder id.
     """
+    __slots__ = (
+        "task_id", "name", "label", "task_type", "parent_id", "_full_label"
+    )
 
     def __init__(
         self,

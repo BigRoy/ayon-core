@@ -15,6 +15,7 @@ class ProductTypeItem:
         name (str): Product type name.
         icon (dict[str, Any]): Product type icon definition.
     """
+    __slots__ = ("name", "icon")
 
     def __init__(self, name, icon):
         self.name = name
@@ -46,6 +47,11 @@ class ProductItem:
         folder_label (str): Folder label.
         version_items (dict[str, VersionItem]): Version items by id.
     """
+    __slots__ = (
+        "product_id", "product_type", "product_name", "product_icon",
+        "product_type_icon", "product_in_scene", "group_name", "folder_id",
+        "folder_label", "version_items"
+    )
 
     def __init__(
         self,
@@ -120,6 +126,11 @@ class VersionItem:
         comment (Union[str, None]): Comment.
         source (Union[str, None]): Source.
     """
+    __slots__ = (
+        "version_id", "version", "is_hero", "product_id", "task_id",
+        "thumbnail_id", "published_time", "author", "status", "frame_range",
+        "duration", "handles", "step", "comment", "source"
+    )
 
     def __init__(
         self,
@@ -227,6 +238,10 @@ class RepreItem:
         product_name (str): Product name.
         folder_label (str): Folder label.
     """
+    __slots__ = (
+        "representation_id", "representation_name", "representation_icon",
+        "product_name", "folder_label"
+    )
 
     def __init__(
         self,
@@ -276,6 +291,11 @@ class ActionItem:
         version_ids (list[str]): Version ids.
         representation_ids (list[str]): Representation ids.
     """
+    __slots__ = (
+        "identifier", "label", "icon", "tooltip", "options", "order",
+        "project_name", "folder_ids", "product_ids", "version_ids",
+        "representation_ids"
+    )
 
     def __init__(
         self,

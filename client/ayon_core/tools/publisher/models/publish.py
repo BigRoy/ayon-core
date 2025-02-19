@@ -400,6 +400,9 @@ class PublishPluginActionItem:
         label (str): Action's label.
         icon (Optional[str]) Action's icon.
     """
+    __slots__ = (
+        "action_id", "plugin_id", "active", "on_filter", "label", "icon"
+    )
 
     def __init__(
         self,
@@ -572,6 +575,11 @@ class PublishErrorItem:
         detail (str): Error detail.
 
     """
+    __slots__ = (
+        "instance_id", "instance_label", "plugin_id", "is_context_plugin",
+        "is_validation_error", "title", "description", "detail"
+    )
+
     def __init__(
         self,
         instance_id: Optional[str],
