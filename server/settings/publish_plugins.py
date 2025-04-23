@@ -438,6 +438,15 @@ class ExtractOIIOTranscodeOutputModel(BaseSettingsModel):
     )
 
 
+class ChannelMappingItemModel(BaseSettingsModel):
+    _layout = "expanded"
+    name: str = SettingsField(title="Destination Channel")
+    value: list[str] = SettingsField(
+        default_factory=list,
+        title="Input Channel"
+    )
+
+
 class ExtractOIIOTranscodeProfileModel(BaseSettingsModel):
     product_types: list[str] = SettingsField(
         default_factory=list,
@@ -459,6 +468,17 @@ class ExtractOIIOTranscodeProfileModel(BaseSettingsModel):
     product_names: list[str] = SettingsField(
         default_factory=list,
         title="Product names"
+    )
+    channel_mapping: list[ChannelMappingItemModel] = SettingsField(
+        default_factory=list,
+        title="Map channels",
+        description=(
+            "Channel mapping for the transcoded representation.\n"
+            "If no matching source channel mapping is found in the media file"
+            "the transcoding will be skipped even if the profile was matched."
+            "When no mapping is provided at all then a default hardcoded "
+            "mapping will be applied that maps RGBA channels."
+        )
     )
     delete_original: bool = SettingsField(
         True,
