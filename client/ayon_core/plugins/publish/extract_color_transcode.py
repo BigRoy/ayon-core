@@ -100,18 +100,17 @@ class ExtractOIIOTranscode(publish.Extractor):
                 self.log.warning("Config file doesn't exist, skipping")
                 continue
 
-            # Get representation files to convert
+            # Get representation files to convert, but ensure it's always
+            # a list
             if isinstance(repre["files"], list):
                 repre_files_to_convert = copy.deepcopy(repre["files"])
             else:
                 repre_files_to_convert = [repre["files"]]
-            repre_files_to_convert = self._translate_to_sequence(
-                repre_files_to_convert)
 
             # Process each output definition
             for output_def in profile_output_defs:
                 # Local copy to avoid accidental mutable changes
-                files_to_convert = list(repre_files_to_convert)
+                _files_to_convert = list(repre_files_to_convert)
 
                 output_name = output_def["name"]
                 new_repre = copy.deepcopy(repre)
@@ -126,7 +125,7 @@ class ExtractOIIOTranscode(publish.Extractor):
                 output_extension = output_def["extension"]
                 output_extension = output_extension.replace('.', '')
                 self._rename_in_representation(new_repre,
-                                               files_to_convert,
+                                               _files_to_convert,
                                                output_name,
                                                output_extension)
 
@@ -163,11 +162,13 @@ class ExtractOIIOTranscode(publish.Extractor):
                 additional_command_args = (output_def["oiiotool_args"]
                                            ["additional_command_args"])
 
-                files_to_convert = self._translate_to_sequence(
-                    files_to_convert)
-                self.log.debug("Files to convert: {}".format(files_to_convert))
+                files_to_convert_sequences = self._translate_to_sequence(
+                    _files_to_convert)
+                self.log.debug(
+                    f"Files to convert: {files_to_convert_sequences}"
+                )
                 missing_rgba_review_channels = False
-                for file_name in files_to_convert:
+                for file_name in files_to_convert_sequences:
                     if isinstance(file_name, clique.Collection):
                         # Support sequences with holes by supplying
                         # dedicated `--frames` argument to `oiiotool`
@@ -245,11 +246,11 @@ class ExtractOIIOTranscode(publish.Extractor):
                         added_review = True
 
                 # If there is only 1 file outputted then convert list to
-                # string, cause that'll indicate that its not a sequence.
+                # string, because that'll indicate that it's not a sequence.
                 if len(new_repre["files"]) == 1:
                     new_repre["files"] = new_repre["files"][0]
 
-                # If the source representation has "review" tag, but its not
+                # If the source representation has "review" tag, but it's not
                 # part of the output definition tags, then both the
                 # representations will be transcoded in ExtractReview and
                 # their outputs will clash in integration.
