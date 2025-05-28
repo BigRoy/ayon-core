@@ -284,6 +284,7 @@ class CoreSettings(BaseSettingsModel):
         "{}",
         title="Global environment variables",
         widget="textarea",
+        syntax="json",
         scope=["studio"],
     )
     update_check_interval: int = SettingsField(
@@ -318,12 +319,14 @@ class CoreSettings(BaseSettingsModel):
     project_folder_structure: str = SettingsField(
         "{}",
         widget="textarea",
+        syntax="json",
         title="Project folder structure",
         section="---"
     )
     project_environments: str = SettingsField(
         "{}",
         widget="textarea",
+        syntax="json",
         title="Project environments",
         section="---"
     )
