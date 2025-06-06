@@ -1,6 +1,6 @@
 name = "core"
 title = "Core"
-version = "1.3.1+cb.2"
+version = "1.3.2+cb.1"
 
 client_dir = "ayon_core"
 
