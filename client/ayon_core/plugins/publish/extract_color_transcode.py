@@ -313,9 +313,11 @@ class ExtractOIIOTranscode(publish.Extractor):
                 or clique.Collection for a sequence.
 
         """
-        pattern = [clique.PATTERNS["frames"]]
+        # clique.PATTERNS["frames"] supports only `.1001.exr` not `_1001.exr`
+        # so we use a customized pattern.
+        pattern = "[_.](?P<index>(?P<padding>0*)\\d+)\\.\\D+\\d?$"
         collections, _ = clique.assemble(
-            files_to_convert, patterns=pattern,
+            files_to_convert, patterns=[pattern],
             assume_padded_when_ambiguous=True)
 
         if collections:
