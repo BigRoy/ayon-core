@@ -161,9 +161,11 @@ class ExtractReview(pyblish.api.InstancePlugin):
         "aftereffects",
         "flame",
         "unreal",
-        "circuit",
+        "batchdelivery",
+        "photoshop"
     ]
 
+    settings_category = "core"
     # Supported extensions
     image_exts = {"exr", "jpg", "jpeg", "png", "dpx", "tga", "tiff", "tif"}
     video_exts = {"mov", "mp4"}
@@ -201,12 +203,17 @@ class ExtractReview(pyblish.api.InstancePlugin):
     def _get_outputs_for_instance(self, instance):
         host_name = instance.context.data["hostName"]
         product_type = instance.data["productType"]
+        task_type = None
+        task_entity = instance.data.get("taskEntity")
+        if task_entity:
+            task_type = task_entity["taskType"]
 
         profile = filter_profiles(
             self.profiles,
             {
                 "hosts": host_name,
                 "product_types": product_type,
+                "task_types": task_type
             },
             logger=self.log)
         if not profile:
