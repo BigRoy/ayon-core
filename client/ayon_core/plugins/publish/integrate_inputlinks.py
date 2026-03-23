@@ -45,6 +45,43 @@ def create_link(
     response.raise_for_status()
 
 
+def create_links(
+    project_name: str,
+    links_by_type: LinksByType
+):
+    # Create all links in one go with new server backend
+    all_links: list[dict] = []
+    for link_type, link_payloads in links_by_type.items():
+        for link_payload in link_payloads:
+            all_links.append({
+                "linkType": ayon_api.get_full_link_type_name(
+                    link_type, "version", "version"
+                ),
+                "input": link_payload.input_id,
+                "output": link_payload.output_id,
+                "data": link_payload.data,
+            })
+
+    response = ayon_api.post(
+        f"/projects/{project_name}/links/bulk",
+        links=all_links
+    )
+    if response.status_code == 405:
+        # API endpoint likely does not exist yet due to older server release
+        for link_type_name, link_payloads in links_by_type.items():
+            for link_payload in link_payloads:
+                create_link(
+                    project_name=project_name,
+                    link_type_name=link_type_name,
+                    input_id=link_payload.input_id,
+                    input_type="version",
+                    output_id=link_payload.output_id,
+                    output_type="version",
+                    data=link_payload.data,
+                )
+
+
+
 class IntegrateInputLinksAYON(pyblish.api.ContextPlugin):
     """Connecting version level dependency links
 
@@ -263,7 +300,9 @@ class IntegrateInputLinksAYON(pyblish.api.ContextPlugin):
                 project_name, link_type, "version", "version"
             )
 
-        # Create link themselves
+        # Filter out already existing links and prepare payload for creation
+        # of new links
+        to_create: LinksByType = collections.defaultdict(list)
         for link_type, link_payloads in new_links.items():
             # Make sure there are no duplicates of src > dst ids and merge
             # metadata if multiple links are found.
@@ -286,12 +325,11 @@ class IntegrateInputLinksAYON(pyblish.api.ContextPlugin):
                 #     to have same links
                 if output_id in existing_links:
                     continue
-                create_link(
-                    project_name,
-                    link_type,
-                    input_id,
-                    "version",
-                    output_id,
-                    "version",
+
+                to_create[link_type].append(LinkPayload(
+                    input_id=input_id,
+                    output_id=output_id,
                     data=data,
-                )
+                ))
+
+        create_links(project_name, to_create)
