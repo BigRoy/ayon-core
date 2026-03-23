@@ -81,7 +81,6 @@ def create_links(
                 )
 
 
-
 class IntegrateInputLinksAYON(pyblish.api.ContextPlugin):
     """Connecting version level dependency links
 
